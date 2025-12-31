@@ -9,9 +9,32 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/auth-helpers-nextjs": "^0.15.0",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.89.0",
+    "@tiptap/extension-collaboration": "^3.14.0",
+    "@tiptap/extension-document": "^3.14.0",
+    "@tiptap/extension-paragraph": "^3.14.0",
+    "@tiptap/extension-text": "^3.14.0",
+    "@tiptap/react": "^3.14.0",
+    "@tiptap/y-tiptap": "^3.0.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "docx": "^9.5.1",
+    "html-docx-js": "^0.3.1",
+    "jspdf": "^3.0.4",
+    "lib0": "^0.2.117",
+    "mammoth": "^1.11.0",
     "next": "16.1.1",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "tailwind-merge": "^3.4.0",
+    "uuid": "^13.0.0",
+    "y-protocols": "^1.0.7",
+    "y-websocket": "^3.0.0",
+    "yjs": "^13.6.28",
+    "zod": "^4.3.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
