@@ -1,8 +1,121 @@
 @import "tailwindcss";
+@import "material-symbols";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+}
+
+@theme {
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Inter", sans-serif;
+  --animate-blob: blob 10s infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-float-delayed: float 6s ease-in-out 3s infinite;
+  --animate-float-fast: float 4s ease-in-out infinite;
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-slide-up: slideUp 0.8s ease-out forwards;
+  --animate-fade-in: fadeIn 1s ease-out forwards;
+  --animate-marquee: marquee 25s linear infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-scan: scan 3s linear infinite;
+  --animate-data-flow: dataFlow 3s linear infinite;
+
+  @keyframes blob {
+    0% {
+      transform: translate(0px, 0px) scale(1);
+    }
+    33% {
+      transform: translate(30px, -50px) scale(1.1);
+    }
+    66% {
+      transform: translate(-20px, 20px) scale(0.9);
+    }
+    100% {
+      transform: translate(0px, 0px) scale(1);
+    }
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  @keyframes slideUp {
+    0% {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  @keyframes scan {
+    0% {
+      top: 0%;
+    }
+    50% {
+      top: 100%;
+    }
+    51% {
+      top: 100%;
+      opacity: 0;
+    }
+    52% {
+      top: 0%;
+      opacity: 0;
+    }
+    53% {
+      top: 0%;
+      opacity: 1;
+    }
+    100% {
+      top: 0%;
+    }
+  }
+
+  @keyframes dataFlow {
+    0% {
+      stroke-dashoffset: 200;
+    }
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
 }
 
 @theme inline {
@@ -23,4 +136,20 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  /* backgrounds */
+  .bg-grid-pattern {
+    background-image: linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+      linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+  }
+
+  .bg-tech-dots {
+    background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+  }
+
+  .bg-gradient-radial {
+    background-image: radial-gradient(var(--tw-gradient-stops));
+  }
 }
