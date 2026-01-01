@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { role, firstName, lastName, email, password } = validatedFields.data;
+    const { firstName, lastName, email, password } = validatedFields.data;
 
     const supabase = await createClient();
     const { data, error } = await supabase.auth.signUp({
@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
         data: {
           first_name: firstName.trim(),
           last_name: lastName.trim(),
-          role: role.toLowerCase(),
         },
       },
     });
