@@ -138,6 +138,19 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.scrollbar::-webkit-scrollbar {
+  width: 7px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background-color: #dddddd;
+  border-radius: 50px;
+}
+
 @layer utilities {
   /* backgrounds */
   .bg-grid-pattern {
