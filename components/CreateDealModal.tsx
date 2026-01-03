@@ -8,7 +8,8 @@ import {
   Tune,
   UploadFile,
 } from "@mui/icons-material";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useCallback, useState } from "react";
+import { useDropzone } from "react-dropzone";
 
 interface AddDealProps {
   closeModal: () => void;
@@ -37,6 +38,7 @@ const CreateDealModal = ({ closeModal }: AddDealProps) => {
   });
   const [value, onChange] = useState<Value>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [errors, setErrors] = useState<string | null>(null);
 
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement>,
@@ -97,6 +99,39 @@ const CreateDealModal = ({ closeModal }: AddDealProps) => {
     return `${year}-${month}-${day}`;
   };
 
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      const selectedFile = acceptedFiles[0];
+      if (!selectedFile) return;
+      setFormData((prevData) => ({
+        ...prevData,
+        document: selectedFile,
+      }));
+    },
+    [setFormData]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    multiple: false,
+    maxSize: 25 * 1024 * 1024, // 25MB
+    accept: {
+      "application/pdf": [".pdf"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        [".docx"],
+    },
+    onDropRejected: (fileRejections: any[]) => {
+      const rejection = fileRejections[0];
+      if (rejection.errors[0].code === "file-too-large") {
+        setErrors("File is too large. Maximum size is 25MB.");
+      } else if (rejection.errors[0].code === "file-invalid-type") {
+        setErrors("Invalid file type. Only PDF and DOCX files are supported.");
+      } else {
+        setErrors("File upload failed. Please try again.");
+      }
+    },
+  });
+
   return (
     <>
       <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
@@ -120,25 +155,45 @@ const CreateDealModal = ({ closeModal }: AddDealProps) => {
       <form action="">
         <div className="flex-1 overflow-y-auto px-6 py-5">
           <div className="mb-6">
-            <label className="mb-2 block text-sm font-semibold text-slate-900">
+            <label
+              htmlFor="document"
+              className="mb-2 block text-sm font-semibold text-slate-900"
+            >
               Upload Document
             </label>
-            <div className="group relative flex items-center gap-4 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-4 transition-colors hover:border-indigo-600/50 hover:bg-slate-100">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-indigo-600">
-                <span>
-                  <UploadFile fontSize="medium" />
-                </span>
+            {isDragActive ? (
+              <div className="group relative flex items-center gap-4 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-4 transition-colors hover:border-indigo-600/50 hover:bg-slate-100">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-indigo-600">
+                  <span>
+                    <UploadFile fontSize="medium" />
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-900">
+                    Drop file here
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-slate-900">
-                  Drop file or{" "}
-                  <button className="text-indigo-600 font-semibold hover:underline">
-                    browse
-                  </button>
-                </p>
-                <p className="text-xs text-slate-500">PDF or DOCX (max 25MB)</p>
+            ) : (
+              <div className="group relative flex items-center gap-4 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-4 transition-colors hover:border-indigo-600/50 hover:bg-slate-100">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-indigo-600">
+                  <span>
+                    <UploadFile fontSize="medium" />
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-900">
+                    Drop file or{" "}
+                    <button className="text-indigo-600 font-semibold hover:underline">
+                      browse
+                    </button>
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    PDF or DOCX (max 25MB)
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <div className="mb-6 space-y-4">
             <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -156,7 +211,7 @@ const CreateDealModal = ({ closeModal }: AddDealProps) => {
                   Deal name <span className="text-red-500">*</span>
                 </label>
                 <input
-                  className="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-indigo-600"
+                  className="block w-full rounded-lg border-2 border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-indigo-600"
                   type="text"
                   name="dealName"
                   id="dealName"
@@ -173,7 +228,7 @@ const CreateDealModal = ({ closeModal }: AddDealProps) => {
                   <span className="text-slate-400 font-normal">(optional)</span>
                 </label>
                 <textarea
-                  className="block w-full resize-y rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-indigo-600"
+                  className="block w-full resize-y rounded-lg border-2 border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-indigo-600"
                   placeholder="Senior secured term loan"
                   name="description"
                   id="description"
@@ -199,12 +254,16 @@ const CreateDealModal = ({ closeModal }: AddDealProps) => {
                 </label>
                 <div className="relative">
                   <select
-                    className="block w-full appearance-none rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-600 focus:ring-indigo-600"
+                    className="block w-full appearance-none rounded-lg border-2 border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-600 focus:ring-indigo-600"
                     name="currency"
                     id="currency"
                   >
-                    <option value="GBP">GBP (£)</option>
-                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP</option>
+                    <option value="EUR">EUR </option>
+                    <option value="CHF">CHF</option>
+                    <option value="RUB">RUB</option>
+                    <option value="MAD">MAD</option>
+                    <option value="NGN">NGN</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
                     <span>
@@ -222,7 +281,7 @@ const CreateDealModal = ({ closeModal }: AddDealProps) => {
                 </label>
                 <div className="relative">
                   <input
-                    className="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-indigo-600"
+                    className="block w-full rounded-lg border-2 border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-indigo-600"
                     type="date"
                     name="date"
                     id="date"
