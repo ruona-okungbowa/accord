@@ -60,7 +60,7 @@ const RegisterPage = () => {
 
       if (response.ok) {
         // Registration successful - redirect to dashboard
-        router.push("/dashboard");
+        router.push("/contracts");
       } else {
         // Handle errors
         if (data.error) {

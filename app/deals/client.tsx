@@ -24,7 +24,7 @@ const DashboardPage = () => {
           <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div>
               <h1 className="text-4xl font-serif font-bold text-slate-900 mb-2">
-                Deals
+                Contracts
               </h1>
               <p className="text-slate-500 font-light">
                 Active loan negotiations
@@ -40,7 +40,7 @@ const DashboardPage = () => {
                 onClick={() => setOpenCreateDealModal(true)}
               >
                 <Add />
-                Create Deal
+                Create Contract
               </button>
             </div>
           </header>
@@ -51,10 +51,11 @@ const DashboardPage = () => {
               </span>
             </div>
             <h2 className="text-2xl font-serif font-bold text-slate-900 mb-3 text-center">
-              You are not currently involved in any loan deals.
+              You are not currently involved in any loan contracts.
             </h2>
             <p className="text-slate-500 text-center max-w-md mb-8 leading-relaxed">
-              Deals will appear here once you are invited or create a new one.
+              Contracts will appear here once you are invited or create a new
+              one.
             </p>
             <div className="flex items-center gap-4">
               <button
@@ -62,7 +63,7 @@ const DashboardPage = () => {
                 className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded shadow-sm hover:bg-indigo-600/90 transition-colors flex items-center gap-2 shadow-indigo-600/20"
               >
                 <Add />
-                Create Deal
+                Create Contract
               </button>
               <button className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 text-sm font-medium rounded shadow-sm hover:bg-slate-50 transition-colors flex items-center gap-2">
                 <Mail />

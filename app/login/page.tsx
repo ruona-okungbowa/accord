@@ -56,7 +56,7 @@ const LoginPage = () => {
       if (response.ok) {
         if (data.session) {
           // Redirect to dashboard or home page
-          router.push("/dashboard");
+          router.push("/contracts");
         }
       }
     } catch (error) {
