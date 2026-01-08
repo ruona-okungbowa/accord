@@ -1,7 +1,6 @@
 /**
  * Document extraction helper functions for Accord system
- * Extracts raw text from DOCX/PDF files and structures them for redlining workflow
- * Optimized for LMA (Loan Market Association) template patterns
+ * Extracts raw text from DOCX/PDF files
  */
 
 import mammoth from "mammoth";

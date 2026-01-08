@@ -1,3 +1,8 @@
+import {
+  extractTextFromDocx,
+  extractTextFromPdf,
+} from "@/lib/document/extractor";
+import { structureText } from "@/lib/document/structure";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -83,6 +88,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { error: participantError } = await supabase
+      .from("deal_participants")
+      .insert({
+        deal_id: deal.id,
+        user_id: user.id,
+        role: role,
+        invited_by: null,
+        invited_at: new Date().toISOString(),
+        accepted_at: new Date().toISOString(),
+        is_active: true,
+      });
+
+    if (participantError) {
+      console.error("Participant creation error:", participantError);
+      return NextResponse.json(
+        { error: "Particpant creation error error" },
+        { status: 500 }
+      );
+    }
+
+    // Extract and structure document text
+    let structuredContent;
+    if (
+      file.type ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
+      const rawText = await extractTextFromDocx(file);
+      structuredContent = structureText(rawText, file.name, file.type);
+    } else if (file.type === "application/pdf") {
+      const rawText = await extractTextFromPdf(file);
+      structuredContent = structureText(rawText, file.name, file.type);
+    }
+
     const safeName = (file.name || "file").replace(/[^a-zA-Z0-9._-]/g, "_");
     const filename = `${Date.now()}_${safeName}`;
     const filePath = `${user.id}/documents/${filename}`;
@@ -90,10 +128,55 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    const { data, error } = await supabase.storage
+      .from("loan-documents")
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (error) {
+      console.error("File upload error:", error);
+      return NextResponse.json(
+        { error: "Document Upload error" },
+        { status: 500 }
+      );
+    }
+    const {
+      data: { publicUrl },
+    } = await supabase.storage.from("loan-documents").getPublicUrl(filePath);
+
+    const { data: document, error: docError } = await supabase
+      .from("documents")
+      .insert({
+        title: file.name,
+        content: structuredContent,
+        created_by: user.id,
+        deal_id: deal.id,
+      })
+      .select()
+      .single();
+
+    if (docError) {
+      console.error("Document creation error:", docError);
+      return NextResponse.json(
+        {
+          error: "Deal created but document processing failed.",
+          deal: deal,
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
       {
         message: "Deal created successfully",
         deal: deal,
+        document: document,
+        metadata: {
+          publicUrl,
+          sectionsExtracted: structuredContent?.sections?.length || 0,
+        },
       },
       { status: 201 }
     );
