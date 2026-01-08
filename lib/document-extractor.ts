@@ -2,22 +2,34 @@
  * Document extraction helper functions for Accord system
  * Extracts raw text from DOCX/PDF files and structures them for redlining workflow
  * Optimized for LMA (Loan Market Association) template patterns
+ * Server-side compatible
  */
 
 import mammoth from "mammoth";
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 
-export async function extractTextFromDocx(file: File): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer();
+/**
+ * Extract text from DOCX file (server-side)
+ */
+export async function extractTextFromDocx(
+  buffer: Buffer | ArrayBuffer
+): Promise<string> {
+  const arrayBuffer =
+    buffer instanceof Buffer ? buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) : buffer;
   const result = await mammoth.extractRawText({ arrayBuffer });
   return result.value;
 }
 
-export async function extractTextFromPdf(file: File): Promise<string> {
-  const pdfjsLib = await import("pdfjs-dist");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+/**
+ * Extract text from PDF file (server-side)
+ */
+export async function extractTextFromPdf(
+  buffer: Buffer | ArrayBuffer
+): Promise<string> {
+  const arrayBuffer =
+    buffer instanceof Buffer ? buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) : buffer;
 
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pdf = await getDocument({ data: arrayBuffer }).promise;
   let fullText = "";
 
   // Extract text from each page
@@ -28,4 +40,23 @@ export async function extractTextFromPdf(file: File): Promise<string> {
     fullText += pageText + "\n";
   }
   return fullText.trim();
+}
+
+/**
+ * Extract text from uploaded file based on type
+ */
+export async function extractTextFromFile(
+  buffer: Buffer,
+  mimeType: string
+): Promise<string> {
+  if (
+    mimeType ===
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ) {
+    return extractTextFromDocx(buffer);
+  } else if (mimeType === "application/pdf") {
+    return extractTextFromPdf(buffer);
+  } else {
+    throw new Error(`Unsupported file type: ${mimeType}`);
+  }
 }
