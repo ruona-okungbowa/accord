@@ -20,7 +20,7 @@ const DashboardPage = () => {
   return (
     <div className="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
       <Layout>
-        <main className="flex-1 max-w-[1600ox] mx-auto w-full px-6 py-8 flex flex-col">
+        <main className="flex-1 max-w-400 mx-auto w-full px-6 py-8 flex flex-col">
           <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div>
               <h1 className="text-4xl font-serif font-bold text-slate-900 mb-2">
@@ -72,7 +72,6 @@ const DashboardPage = () => {
             </div>
           </section>
         </main>
-        <Footer />
       </Layout>
       <CenterModal
         isOpen={openCreateDealModal}
