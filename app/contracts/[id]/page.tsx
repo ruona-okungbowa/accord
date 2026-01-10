@@ -5,8 +5,9 @@ export const metadata: Metadata = {
   title: "Accord - Contract Dashboard",
 };
 
-const Dashboard = () => {
-  return <ContractDashboard />;
+const Dashboard = async ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
+  return <ContractDashboard id={id} />;
 };
 
 export default Dashboard;

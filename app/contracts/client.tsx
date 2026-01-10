@@ -13,9 +13,12 @@ import {
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import CenterModal from "@/components/CenterModal";
+import InvitePartipantsModal from "@/components/InvitePartipantsModal";
 
 const DashboardPage = () => {
   const [openCreateDealModal, setOpenCreateDealModal] = useState(false);
+  const [openCreateInvitationsModal, setOpenCreateInvitationsModal] =
+    useState(false);
   const router = useRouter();
   return (
     <div className="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
@@ -31,7 +34,10 @@ const DashboardPage = () => {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <button className="pointer-events-none grayscale opacity-50 px-4 py-2 bg-white border border-slate-300 text-slate-700 text-sm font-medium rounded shadow-sm flex items-center gap-2">
+              <button
+                onClick={() => setOpenCreateInvitationsModal(true)}
+                className="pointer-events-none grayscale opacity-50 px-4 py-2 bg-white border border-slate-300 text-slate-700 text-sm font-medium rounded shadow-sm flex items-center gap-2"
+              >
                 <Mail />
                 Join via Invite
               </button>
@@ -65,7 +71,10 @@ const DashboardPage = () => {
                 <Add />
                 Create Contract
               </button>
-              <button className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 text-sm font-medium rounded shadow-sm hover:bg-slate-50 transition-colors flex items-center gap-2">
+              <button
+                onClick={() => setOpenCreateInvitationsModal(true)}
+                className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 text-sm font-medium rounded shadow-sm hover:bg-slate-50 transition-colors flex items-center gap-2"
+              >
                 <Mail />
                 Join via Invite
               </button>
@@ -80,6 +89,17 @@ const DashboardPage = () => {
         borderRadius="10px"
       >
         <CreateDealModal closeModal={() => setOpenCreateDealModal(false)} />
+      </CenterModal>
+
+      <CenterModal
+        isOpen={openCreateInvitationsModal}
+        onClose={() => setOpenCreateInvitationsModal(false)}
+        width={900}
+        borderRadius="10px"
+      >
+        <InvitePartipantsModal
+          closeModal={() => setOpenCreateInvitationsModal(false)}
+        />
       </CenterModal>
     </div>
   );

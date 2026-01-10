@@ -1,7 +1,32 @@
+"use client";
 import { Gavel, Notifications } from "@mui/icons-material";
-import React from "react";
+import React, { useState, useEffect } from "react";
+
+interface User {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  firm_name?: string | null;
+}
 
 const Navbar = () => {
+  const [user, setUser] = useState<User | null>(null);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch("/api/profile");
+        const data = await response.json();
+        if (response.ok) {
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+    fetchUserData();
+  }, []);
+
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200">
       <div className="max-w-400 mx-auto px-6 h-16 flex items-center justify-between">
@@ -47,8 +72,8 @@ const Navbar = () => {
           <div className="h-8 w-px bg-slate-200"></div>
           <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
             <div className="text-right hidden sm:block">
-              <div className="text-xs font-bold text-slate-700">
-                Eleanor Vance
+              <div className="text-xs capitalize font-bold text-slate-700">
+                {user?.first_name} {user?.last_name}
               </div>
               <div className="text-[10px] text-slate-500">
                 Partner • Latham &amp; Watkins

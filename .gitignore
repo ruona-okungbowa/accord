@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+accord-482013-ebdf3fdc3b7d.json
 
 # debug
 npm-debug.log*

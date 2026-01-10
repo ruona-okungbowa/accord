@@ -4,6 +4,7 @@ import {
 } from "@/lib/document/extractor";
 import { structureText } from "@/lib/document/structure";
 import { createClient } from "@/lib/supabase/server";
+import { DocumentProcessorServiceClient } from "@google-cloud/documentai";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
     const description = form.get("description") as string;
     const currency = form.get("currency") as string;
     const role = form.get("role") as string;
+    const amount = form.get("amount") as string;
     const targetSigningDate = form.get("targetSigningDate") as string;
     const file = form.get("document") as File | null;
 
@@ -67,8 +69,9 @@ export async function POST(request: NextRequest) {
       name,
       description: description || null,
       currency,
-      role,
-      target_signing_date: targetSigningDate || null,
+      amount: amount ? parseFloat(amount) : null,
+      status: "drafting",
+      target_close_date: targetSigningDate || null,
       created_by: user.id,
     };
 
@@ -108,27 +111,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract and structure document text
-    let structuredContent;
-    if (
-      file.type ===
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
-      const rawText = await extractTextFromDocx(file);
-      structuredContent = structureText(rawText, file.name, file.type);
-    } else if (file.type === "application/pdf") {
-      const rawText = await extractTextFromPdf(file);
-      structuredContent = structureText(rawText, file.name, file.type);
-    }
-
     const safeName = (file.name || "file").replace(/[^a-zA-Z0-9._-]/g, "_");
     const filename = `${Date.now()}_${safeName}`;
     const filePath = `${user.id}/documents/${filename}`;
-
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    let extractedText = "";
 
-    const { data, error } = await supabase.storage
+    if (file.type === "application/pdf") {
+      extractedText = await extractTextFromPdf(buffer);
+    } else {
+      extractedText = await extractTextFromDocx(buffer);
+    }
+    console.log(extractedText);
+
+    const structuredContent = structureText(
+      extractedText,
+      file.name,
+      file.type
+    );
+
+    const { error } = await supabase.storage
       .from("loan-documents")
       .upload(filePath, buffer, {
         contentType: file.type,
@@ -159,6 +162,9 @@ export async function POST(request: NextRequest) {
 
     if (docError) {
       console.error("Document creation error:", docError);
+      await supabase.from("deal_participants").delete().eq("deal_id", deal.id);
+      await supabase.from("deals").delete().eq("id", deal.id);
+      await supabase.storage.from("loan-documents").remove([filePath]);
       return NextResponse.json(
         {
           error: "Deal created but document processing failed.",
@@ -171,11 +177,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         message: "Deal created successfully",
-        deal: deal,
-        document: document,
-        metadata: {
-          publicUrl,
-          sectionsExtracted: structuredContent?.sections?.length || 0,
+        deal: {
+          id: deal.id,
+          name: deal.name,
+          description: deal.description,
+          currency: deal.currency,
+          role: deal.role,
+          targetSigningDate: deal.target_signing_date,
+        },
+        document: {
+          id: document.id,
+          title: document.title,
         },
       },
       { status: 201 }

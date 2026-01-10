@@ -1,4 +1,6 @@
 "use client";
+import CenterModal from "@/components/CenterModal";
+import InvitePartipantsModal from "@/components/InvitePartipantsModal";
 import Layout from "@/components/Layout";
 import {
   Analytics,
@@ -6,6 +8,7 @@ import {
   Badge,
   Check,
   ChevronRight,
+  FolderOpen,
   GroupAdd,
   History,
   ListAlt,
@@ -13,9 +16,51 @@ import {
   PriorityHigh,
 } from "@mui/icons-material";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import React, { use, useState, useEffect } from "react";
 
-const ContractDashboard = () => {
+interface Contract {
+  id: string;
+  name: string;
+  description: string | null;
+  currency: string;
+  amount: number;
+  status: string;
+  target_close_date: string | null;
+}
+
+interface User {
+  id: string;
+  role: string;
+}
+
+const ContractDashboard = ({ id }: { id: string }) => {
+  const router = useRouter();
+  const [contract, setContract] = useState<Contract | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [openInviteModal, setOpenInviteModal] = useState(false);
+
+  // Fetch details for the specified contractId
+  const fetchContractDetails = async () => {
+    try {
+      const response = await fetch(`/api/contracts/${id}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Error fetching contract details:", data.error);
+        throw new Error(data.error);
+      }
+      setContract(data.contract);
+      setUser(data.user);
+    } catch (error) {
+      console.error("Error fetching contract details:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchContractDetails();
+  }, [id]);
+
   return (
     <div className="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
       <Layout>
@@ -30,32 +75,27 @@ const ContractDashboard = () => {
             <span>
               <ChevronRight fontSize="small" />
             </span>
-            <span className="font-medium text-slate-900">
-              £500m Term Loan B
-            </span>
+            <span className="font-medium text-slate-900">{contract?.name}</span>
           </div>
           <header className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm mb-6">
             <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
               <div>
                 <div className="flex items-center-gap-3 mb-2">
-                  <h1 className="text-3xl font-serif font-bold text-slate-900">
-                    £500m Term Loan B
+                  <h1 className="text-3xl capitalize font-serif font-bold text-slate-900">
+                    {contract?.name}
                   </h1>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                  <span className="inline-flex capitalize items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
                     <span className="rounded-full w-1.5 h-1.5 bg-slate-400"></span>
-                    Drafting
+                    {contract?.status}
                   </span>
                   <span className="h-4 w-px bg-slate-200"> </span>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-600/10 text-indigo-600 border border-indigo-600/20">
+                  <span className="inline-flex capitalize items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-600/10 text-indigo-600 border border-indigo-600/20">
                     <span className="mr-1">
                       <Badge fontSize="small" />
                     </span>
-                    Arranger Counsel
-                  </span>
-                  <span className="text-xs text-slate-500 ml-1">
-                    Project Alpha • GBP
+                    {user?.role}
                   </span>
                 </div>
               </div>
@@ -67,15 +107,18 @@ const ContractDashboard = () => {
                   View Decisions
                 </Link>
                 <Link
-                  className="px-4 py-2 bg-white border border-slate-300 text-slate-400 text-sm font-medium rounded shadow-sm cursor-not-allowed opacity-75"
                   href="#"
+                  className="px-4 py-2 bg-white border border-slate-300 text-slate-400 text-sm font-medium rounded shadow-sm cursor-not-allowed opacity-75"
                 >
                   View Readiness
                 </Link>
                 <Link
                   className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded shadow-sm hover:bg-indigo-600/90 transition-colors flex items-center gap-2 shadow-indigo-600/20"
-                  href="#"
+                  href={`/contracts/${id}/workspace`}
                 >
+                  <span className="text-[18px]">
+                    <FolderOpen fontSize="inherit" />
+                  </span>
                   Open Document Workspace
                 </Link>
               </div>
@@ -179,7 +222,7 @@ const ContractDashboard = () => {
                       Amount
                     </div>
                     <div className="text-sm font-medium text-slate-900">
-                      £500,000,000
+                      {contract?.amount}
                     </div>
                   </div>
                   <div>
@@ -187,7 +230,7 @@ const ContractDashboard = () => {
                       Currency
                     </div>
                     <div className="text-sm font-medium text-slate-900">
-                      GBP (Sterling)
+                      {contract?.currency}
                     </div>
                   </div>
                   <div>
@@ -195,7 +238,7 @@ const ContractDashboard = () => {
                       Target Signing
                     </div>
                     <div className="text-sm font-medium text-slate-900">
-                      Oct 24, 2026
+                      {contract?.target_close_date}
                     </div>
                   </div>
                 </div>
@@ -205,7 +248,10 @@ const ContractDashboard = () => {
                   <h3 className="text-lg font-serif font-bold text-slate-900">
                     Participants
                   </h3>
-                  <span className="text-xs text-indigo-600 hover:underline cursor-pointer">
+                  <span
+                    onClick={() => setOpenInviteModal(true)}
+                    className="text-xs text-indigo-600 hover:underline cursor-pointer"
+                  >
                     Invite
                   </span>
                 </div>
@@ -241,6 +287,14 @@ const ContractDashboard = () => {
           </div>
         </main>
       </Layout>
+      <CenterModal
+        isOpen={openInviteModal}
+        onClose={() => setOpenInviteModal(false)}
+        width={800}
+        borderRadius="10px"
+      >
+        <InvitePartipantsModal closeModal={() => setOpenInviteModal(false)} />
+      </CenterModal>
     </div>
   );
 };
