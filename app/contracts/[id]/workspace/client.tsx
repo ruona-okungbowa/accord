@@ -1,25 +1,29 @@
 "use client";
-import Layout from "@/components/Layout";
 import {
   Add,
   AssignmentLate,
   Badge,
   Dashboard,
   Description,
-  DocumentScanner,
+  Edit,
   FactCheck,
   FilterList,
   Gavel,
   History,
   KeyboardDoubleArrowLeft,
   KeyboardDoubleArrowRight,
+  RateReview,
   Search,
   Verified,
+  Visibility,
 } from "@mui/icons-material";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import DocumentEditor from "@/components/document/DocumentEditor";
+import ReviewMode from "@/components/document/ReviewMode";
+import ProposalEditor from "@/components/document/ProposalEditor";
+import ProposalPanel from "@/components/document/ProposalPanel";
 import { StructuredDocument } from "@/lib/document/structure";
+import { DraftProposal } from "@/lib/types/proposals";
 
 interface Contract {
   id: string;
@@ -46,14 +50,19 @@ interface Document {
   deal_id: string;
 }
 
+type WorkspaceMode = "review" | "propose";
+
 const DocumentWorkspace = ({ id }: { id: string }) => {
   const [contract, setContract] = useState<Contract | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [document, setDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
-  const [openInviteModal, setOpenInviteModal] = useState(false);
+  const [mode, setMode] = useState<WorkspaceMode>("review");
+  const [showProposalPanel, setShowProposalPanel] = useState(false);
+  const [selectedProposalId, setSelectedProposalId] = useState<string | null>(
+    null
+  );
 
-  // Fetch details for the specified contractId
   const fetchContractDetails = async () => {
     try {
       setLoading(true);
@@ -93,6 +102,41 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
     fetchDocument();
   }, [id]);
 
+  const handleCreateProposal = async (proposal: DraftProposal) => {
+    try {
+      const response = await fetch("/api/proposals", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          dealId: id,
+          documentId: document?.id,
+          title: proposal.title,
+          summary: proposal.summary,
+          edits: proposal.edits,
+          status: "submitted",
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to create proposal");
+      }
+
+      alert("Proposal submitted successfully!");
+      setMode("review");
+    } catch (error) {
+      console.error("Error creating proposal:", error);
+      throw error;
+    }
+  };
+
+  const handleProposalClick = (proposalId: string) => {
+    setSelectedProposalId(proposalId);
+    setShowProposalPanel(true);
+  };
+
   return (
     <div className="bg-slate-50 text-slate-800 font-sans overflow-hidden h-screen flex flex-col">
       <header className="h-14 bg-white border-b border-[#e2e8f0] flex items-center justify-between px-4 shrink-0 z-30 relative shadow-sm">
@@ -131,11 +175,43 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
           <div className="px-3 py-1 bg-gray-100 rounded-full flex items-center gap-2 border border-gray-200">
             <div className="w-1.5 h-1.5 rounded-full bg-gray-500"></div>
             <span className="font-semibold text-[10px] text-gray-600 uppercase tracking-wide">
-              Negotiation
+              {contract?.status || "Negotiation"}
             </span>
           </div>
         </div>
         <div className="flex items-center gap-4">
+          {/* Mode switcher */}
+          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setMode("review")}
+              className={`
+                px-3 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1
+                ${
+                  mode === "review"
+                    ? "bg-white text-indigo-600 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }
+              `}
+            >
+              <Visibility fontSize="small" />
+              Review
+            </button>
+            <button
+              onClick={() => setMode("propose")}
+              className={`
+                px-3 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1
+                ${
+                  mode === "propose"
+                    ? "bg-white text-indigo-600 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }
+              `}
+            >
+              <Edit fontSize="small" />
+              Propose
+            </button>
+          </div>
+
           <div className="flex items-center gap-2 px-2 py-1 bg-slate-50 rounded border border-slate-100">
             <span className="text-slate-400 text-[16px]">
               <Badge fontSize="inherit" />
@@ -247,57 +323,90 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
               </div>
             </div>
           ) : document && document.content ? (
-            <DocumentEditor
-              document={document.content}
-              dealId={id}
-              onSave={async (changes) => {
-                console.log("Saving changes:", changes);
-              }}
-            />
+            mode === "review" ? (
+              <ReviewMode
+                document={document.content}
+                dealId={id}
+                onProposalClick={handleProposalClick}
+              />
+            ) : (
+              <ProposalEditor
+                document={document.content}
+                dealId={id}
+                onSubmit={handleCreateProposal}
+                onCancel={() => setMode("review")}
+              />
+            )
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center text-gray-500">
                 <Description className="text-6xl mb-4 text-gray-400" />
                 <p className="text-lg font-semibold mb-2">No document found</p>
-                <p className="text-sm">This contract doesn't have a document yet.</p>
+                <p className="text-sm">
+                  This contract doesn't have a document yet.
+                </p>
               </div>
             </div>
           )}
         </main>
-        <aside className="w-15 bg-white border-l border-[#e2e8f0] flex flex-col items-center py-4 gap-4 shrink-0 z-20 shadow-sm transition-all duration-300">
-          <button className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors mb-2 group relative">
-            <span className=" text-[24px]">
-              <KeyboardDoubleArrowLeft fontSize="inherit" />
-            </span>
-            <span className="absolute right-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Expand Panel
-            </span>
-          </button>
-          <div className="w-8 h-px bg-gray-200mb-2"></div>
-          <div className="relative group">
-            <button className="w-10 h-10 flex items-center justify-center rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors shadow-sm border border-indigo-100">
-              <span className=" text-[24px]">
-                <AssignmentLate fontSize="inherit" />
-              </span>
-            </button>
-          </div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors group relative">
-            <span className=" text-[24px]">
-              <History fontSize="inherit" />
-            </span>
-            <span className="absolute right-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Activity History
-            </span>
-          </button>
-          <div className="flex-1"></div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-[#334155] transition-colors shadow-md group relative">
-            <span className=" text-[20px]">
-              <Add fontSize="inherit" />
-            </span>
-            <span className="absolute right-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              New Issue
-            </span>
-          </button>
+        <aside
+          className={`
+          ${showProposalPanel ? "w-96" : "w-15"}
+          bg-white border-l border-[#e2e8f0] flex flex-col items-center py-4 gap-4 shrink-0 z-20 shadow-sm transition-all duration-300
+        `}
+        >
+          {showProposalPanel ? (
+            <ProposalPanel
+              dealId={id}
+              userRole={user?.role}
+              onClose={() => setShowProposalPanel(false)}
+            />
+          ) : (
+            <>
+              <button
+                onClick={() => setShowProposalPanel(true)}
+                className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors mb-2 group relative"
+              >
+                <span className=" text-[24px]">
+                  <KeyboardDoubleArrowLeft fontSize="inherit" />
+                </span>
+                <span className="absolute right-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                  Show Proposals
+                </span>
+              </button>
+              <div className="w-8 h-px bg-gray-200mb-2"></div>
+              <div className="relative group">
+                <button
+                  onClick={() => setShowProposalPanel(true)}
+                  className="w-10 h-10 flex items-center justify-center rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors shadow-sm border border-indigo-100"
+                >
+                  <span className=" text-[24px]">
+                    <AssignmentLate fontSize="inherit" />
+                  </span>
+                </button>
+              </div>
+              <button className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors group relative">
+                <span className=" text-[24px]">
+                  <History fontSize="inherit" />
+                </span>
+                <span className="absolute right-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                  Activity History
+                </span>
+              </button>
+              <div className="flex-1"></div>
+              <button
+                onClick={() => setMode("propose")}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-[#334155] transition-colors shadow-md group relative"
+              >
+                <span className=" text-[20px]">
+                  <Add fontSize="inherit" />
+                </span>
+                <span className="absolute right-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                  New Proposal
+                </span>
+              </button>
+            </>
+          )}
         </aside>
       </div>
     </div>
