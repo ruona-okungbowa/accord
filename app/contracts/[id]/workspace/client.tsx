@@ -18,6 +18,8 @@ import {
 } from "@mui/icons-material";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
+import DocumentEditor from "@/components/document/DocumentEditor";
+import { StructuredDocument } from "@/lib/document/structure";
 
 interface Contract {
   id: string;
@@ -34,14 +36,27 @@ interface User {
   role: string;
 }
 
+interface Document {
+  id: string;
+  title: string;
+  content: StructuredDocument;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  deal_id: string;
+}
+
 const DocumentWorkspace = ({ id }: { id: string }) => {
   const [contract, setContract] = useState<Contract | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [document, setDocument] = useState<Document | null>(null);
+  const [loading, setLoading] = useState(true);
   const [openInviteModal, setOpenInviteModal] = useState(false);
 
   // Fetch details for the specified contractId
   const fetchContractDetails = async () => {
     try {
+      setLoading(true);
       const response = await fetch(`/api/contracts/${id}`);
       const data = await response.json();
 
@@ -56,8 +71,26 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
     }
   };
 
+  const fetchDocument = async () => {
+    try {
+      const response = await fetch(`/api/documents/${id}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Error fetching document:", data.error);
+        throw new Error(data.error);
+      }
+      setDocument(data.document);
+    } catch (error) {
+      console.error("Error fetching document:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchContractDetails();
+    fetchDocument();
   }, [id]);
 
   return (
@@ -205,7 +238,32 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
             </span>
           </button>
         </aside>
-        <main className="flex-1 bg-[#f1f5f9] relative overflow-y-auto flex justify-center p-8 scroll-smooth"></main>
+        <main className="flex-1 bg-[#f1f5f9] relative overflow-y-auto flex justify-center p-8 scroll-smooth">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading document...</p>
+              </div>
+            </div>
+          ) : document && document.content ? (
+            <DocumentEditor
+              document={document.content}
+              dealId={id}
+              onSave={async (changes) => {
+                console.log("Saving changes:", changes);
+              }}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center text-gray-500">
+                <Description className="text-6xl mb-4 text-gray-400" />
+                <p className="text-lg font-semibold mb-2">No document found</p>
+                <p className="text-sm">This contract doesn't have a document yet.</p>
+              </div>
+            </div>
+          )}
+        </main>
         <aside className="w-15 bg-white border-l border-[#e2e8f0] flex flex-col items-center py-4 gap-4 shrink-0 z-20 shadow-sm transition-all duration-300">
           <button className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors mb-2 group relative">
             <span className=" text-[24px]">
