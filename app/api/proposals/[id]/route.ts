@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  applyProposalEditsToDocument,
+  validateProposalEdits,
+  createChangeSummary,
+} from "@/lib/document/update";
+import { ProposalEdit } from "@/lib/types/proposals";
 
 /**
  * GET /api/proposals/[id]
@@ -233,6 +239,93 @@ export async function PATCH(
         { error: "Error updating proposal" },
         { status: 500 }
       );
+    }
+
+    // If the proposal was accepted, apply the edits to the document
+    if (action === "accept" && updatedProposal) {
+      try {
+        // Fetch the current document
+        const { data: document, error: docError } = await supabase
+          .from("documents")
+          .select("*")
+          .eq("id", updatedProposal.document_id)
+          .single();
+
+        if (docError || !document) {
+          console.error("Error fetching document:", docError);
+          return NextResponse.json(
+            {
+              error: "Proposal accepted but failed to update document",
+              proposal: updatedProposal,
+            },
+            { status: 500 }
+          );
+        }
+
+        const edits = (updatedProposal as any).proposal_edits as ProposalEdit[];
+
+        // Validate edits can be applied
+        const validationErrors = validateProposalEdits(document.content, edits);
+        if (validationErrors.length > 0) {
+          console.error("Validation errors:", validationErrors);
+          return NextResponse.json(
+            {
+              error: "Cannot apply proposal edits: " + validationErrors.join(", "),
+              proposal: updatedProposal,
+            },
+            { status: 400 }
+          );
+        }
+
+        // Apply the edits
+        const updatedDocument = applyProposalEditsToDocument(
+          document.content,
+          edits
+        );
+
+        // Update the document in the database
+        const { error: updateDocError } = await supabase
+          .from("documents")
+          .update({
+            content: updatedDocument,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", document.id);
+
+        if (updateDocError) {
+          console.error("Error updating document:", updateDocError);
+          return NextResponse.json(
+            {
+              error: "Proposal accepted but failed to save document changes",
+              proposal: updatedProposal,
+            },
+            { status: 500 }
+          );
+        }
+
+        // Create change summary for logging
+        const changeSummary = createChangeSummary(edits);
+        console.log(
+          `Document ${document.id} updated: ${changeSummary.added} added, ${changeSummary.modified} modified, ${changeSummary.deleted} deleted`
+        );
+
+        return NextResponse.json({
+          message:
+            "Proposal accepted and document updated successfully",
+          proposal: updatedProposal,
+          documentUpdated: true,
+          changeSummary,
+        });
+      } catch (error) {
+        console.error("Error applying proposal edits:", error);
+        return NextResponse.json(
+          {
+            error: "Proposal accepted but failed to update document",
+            proposal: updatedProposal,
+          },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({

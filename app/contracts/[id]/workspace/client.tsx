@@ -137,6 +137,11 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
     setShowProposalPanel(true);
   };
 
+  const handleProposalAccepted = async () => {
+    // Refresh the document when a proposal is accepted
+    await fetchDocument();
+  };
+
   return (
     <div className="bg-slate-50 text-slate-800 font-sans overflow-hidden h-screen flex flex-col">
       <header className="h-14 bg-white border-b border-[#e2e8f0] flex items-center justify-between px-4 shrink-0 z-30 relative shadow-sm">
@@ -360,6 +365,7 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
               dealId={id}
               userRole={user?.role}
               onClose={() => setShowProposalPanel(false)}
+              onProposalAccepted={handleProposalAccepted}
             />
           ) : (
             <>

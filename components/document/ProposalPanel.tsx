@@ -19,6 +19,7 @@ interface ProposalPanelProps {
   userRole?: string;
   onClose?: () => void;
   onProposalSelect?: (proposalId: string) => void;
+  onProposalAccepted?: () => void; // Callback when a proposal is accepted
 }
 
 const ProposalPanel: React.FC<ProposalPanelProps> = ({
@@ -26,6 +27,7 @@ const ProposalPanel: React.FC<ProposalPanelProps> = ({
   userRole,
   onClose,
   onProposalSelect,
+  onProposalAccepted,
 }) => {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
@@ -80,9 +82,21 @@ const ProposalPanel: React.FC<ProposalPanelProps> = ({
       });
 
       if (response.ok) {
+        const data = await response.json();
+
+        // If proposal was accepted, notify parent to refresh document
+        if (action === "accept" && onProposalAccepted) {
+          onProposalAccepted();
+        }
+
         await fetchProposals();
         if (selectedProposal?.id === proposalId) {
           await fetchProposalDetails(proposalId);
+        }
+
+        // Show success message for acceptance
+        if (action === "accept") {
+          alert("Proposal accepted! The document has been updated.");
         }
       } else {
         const data = await response.json();
