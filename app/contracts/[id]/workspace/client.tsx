@@ -1,5 +1,4 @@
 "use client";
-import Layout from "@/components/Layout";
 import {
   Add,
   AssignmentLate,
@@ -37,6 +36,7 @@ interface User {
 const DocumentWorkspace = ({ id }: { id: string }) => {
   const [contract, setContract] = useState<Contract | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [openInviteModal, setOpenInviteModal] = useState(false);
 
   // Fetch details for the specified contractId
@@ -76,7 +76,7 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
               href="#"
               className="text-[#64748b] hover:text-indigo-600 transition-colors"
             >
-              Deals
+              Contracts
             </Link>
             <span className="text-gray-300">/</span>
             <Link
@@ -205,7 +205,14 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
             </span>
           </button>
         </aside>
-        <main className="flex-1 bg-[#f1f5f9] relative overflow-y-auto flex justify-center p-8 scroll-smooth"></main>
+        <main className="flex-1 bg-[#f1f5f9] relative overflow-y-auto flex justify-center p-8 scroll-smooth">
+          <div className="w-full max-w-4xl bg-white min-h-350 mb-20 shadow relative">
+            {/* Document content goes here */}
+            <div className="px-20 pb-20 text-justify leading-9 font-serif text-slate-700 text-[17px]">
+              <h1 className="text-3xl font-serif font-bold text-center text-[#0f172a] mb-3"></h1>
+            </div>
+          </div>
+        </main>
         <aside className="w-15 bg-white border-l border-[#e2e8f0] flex flex-col items-center py-4 gap-4 shrink-0 z-20 shadow-sm transition-all duration-300">
           <button className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors mb-2 group relative">
             <span className=" text-[24px]">

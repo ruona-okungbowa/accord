@@ -39,6 +39,7 @@ const ContractDashboard = ({ id }: { id: string }) => {
   const [contract, setContract] = useState<Contract | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [openInviteModal, setOpenInviteModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Fetch details for the specified contractId
   const fetchContractDetails = async () => {
@@ -54,6 +55,8 @@ const ContractDashboard = ({ id }: { id: string }) => {
       setUser(data.user);
     } catch (error) {
       console.error("Error fetching contract details:", error);
+    } finally {
+      setLoading(false);
     }
   };
 

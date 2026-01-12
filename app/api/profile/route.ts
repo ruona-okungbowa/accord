@@ -9,9 +9,12 @@ export async function GET(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return new NextResponse(JSON.stringify({ error: "Unauthorised user" }), {
-        status: 401,
-      });
+      return NextResponse.json(
+        { error: "Unauthorised user" },
+        {
+          status: 401,
+        }
+      );
     }
 
     const { data, error } = await supabase
@@ -22,8 +25,8 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("Error fetching profile:", error);
-      return new NextResponse(
-        JSON.stringify({ error: "Error fetching profile" }),
+      return NextResponse.json(
+        { error: "Error fetching profile" },
         { status: 500 }
       );
     }
