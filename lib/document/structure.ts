@@ -6,7 +6,7 @@
 
 export interface DocumentSection {
   id: string;
-  type: "heading" | "clause" | "paragraph" | "list_item";
+  type: "heading" | "clause" | "paragraph" | "list_item" | "toc_entry";
   content: string;
   startPosition: number;
   endPosition: number;
@@ -15,6 +15,7 @@ export interface DocumentSection {
     level?: number;
     clauseNumber?: string;
     parent?: string;
+    pageNumber?: string;
   };
 }
 
@@ -52,7 +53,7 @@ function isBareClauseNumber(s: string) {
 }
 
 function isStructuralKeywordHeading(s: string) {
-  return /^(SECTION|SCHEDULE|PART|ARTICLE|EXHIBIT|APPENDIX)\b/i.test(s.trim());
+  return /^(SECTION|SCHEDULE|PART|ARTICLE|EXHIBIT|CONTENTS)\b/i.test(s.trim());
 }
 
 function isAllCapsMeaningfulHeading(s: string) {
@@ -70,6 +71,26 @@ function isAllCapsMeaningfulHeading(s: string) {
   if (/^"[A-Z]/.test(t)) return false;
 
   return true;
+}
+
+function isTocEntry(s: string) {
+  const c = s.trim();
+
+  // Skip "CONTENTS" header and "CLAUSE PAGE" entries
+  if (/^CONTENTS$/i.test(c) || /^CLAUSE\s+PAGE$/i.test(c)) {
+    return false;
+  }
+
+  // TOC entries often have dots leading to page numbers: "Section 1 ........ 5"
+  if (/\.{3,}/.test(c)) return true;
+
+  // Or they might be simple entries with page numbers at the end
+  if (/^[A-Z][^.]*\s+\d{1,3}$/.test(c)) return true;
+
+  // Section entries without dots but with clear structure
+  if (/^SECTION\s+\d+\s+[A-Z\s]+$/i.test(c)) return true;
+
+  return false;
 }
 
 function isBareListMarker(s: string) {
@@ -94,11 +115,15 @@ function looksLikeListContinuation(prev: string, curr: string) {
  */
 function detectSectionType(
   content: string
-): "heading" | "clause" | "paragraph" | "list_item" {
+): "heading" | "clause" | "paragraph" | "list_item" | "toc_entry" {
   const c = content.trim();
 
   if (isStructuralKeywordHeading(c) || isAllCapsMeaningfulHeading(c)) {
     return "heading";
+  }
+
+  if (isTocEntry(c)) {
+    return "toc_entry";
   }
 
   if (isClauseHeadingLine(c) && !isBareClauseNumber(c)) {
@@ -119,10 +144,18 @@ function detectSectionType(
  */
 function extractMetadata(
   content: string,
-  type: "heading" | "clause" | "paragraph" | "list_item"
+  type: "heading" | "clause" | "paragraph" | "list_item" | "toc_entry"
 ): DocumentSection["metadata"] {
   const metadata: DocumentSection["metadata"] = {};
   const c = content.trim();
+
+  if (type === "toc_entry") {
+    // Extract page number from TOC entries
+    const pageMatch = c.match(/\s+(\d{1,3})$/);
+    if (pageMatch) {
+      metadata.pageNumber = pageMatch[1];
+    }
+  }
 
   if (type === "heading") {
     if (/^SECTION\s+(\d+)/i.test(c)) {
@@ -135,6 +168,8 @@ function extractMetadata(
       metadata.level = 1;
     } else if (/^SCHEDULE\s+(\d+)/i.test(c)) {
       metadata.level = 2;
+    } else if (/^CONTENTS$/i.test(c)) {
+      metadata.level = 0; // TOC header
     } else {
       metadata.level = 3;
     }
@@ -174,12 +209,8 @@ function normaliseForStructring(rawText: string, fileType: string): string {
   t = t.replace(/Linklaters\s*\n\s*6 December 2022/g, "");
   t = t.replace(/Ref: L-317135\s*\n/g, "");
 
-  // Remove table of contents
-  const tocStart = t.indexOf("CONTENTS");
-  const section1Start = t.indexOf("SECTION 1");
-  if (tocStart !== -1 && section1Start !== -1 && tocStart < section1Start) {
-    t = t.substring(0, tocStart) + t.substring(section1Start);
-  }
+  // Instead of removing TOC completely, let's preserve it but mark it specially
+  // We'll handle TOC formatting in the viewer instead
 
   let lines = t
     .split("\n")
