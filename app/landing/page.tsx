@@ -1,7 +1,12 @@
-import React from "react";
+import type { Metadata } from "next";
+import LandingPage from "./client";
 
-const LandingPage = () => {
-  return <div>LandingPage</div>;
+export const metadata: Metadata = {
+  title: "Accord",
 };
 
-export default LandingPage;
+const Landing = () => {
+  return <LandingPage />;
+};
+
+export default Landing;

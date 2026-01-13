@@ -1,4 +1,6 @@
 "use client";
+import DocumentViewer from "@/components/DocumentViewer";
+import { DocumentSection, StructuredDocument } from "@/lib/document/structure";
 import {
   Add,
   AssignmentLate,
@@ -28,6 +30,15 @@ interface Contract {
   target_close_date: string | null;
 }
 
+interface Document {
+  id: string;
+  content: StructuredDocument;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+}
+
 interface User {
   id: string;
   role: string;
@@ -35,7 +46,12 @@ interface User {
 
 const DocumentWorkspace = ({ id }: { id: string }) => {
   const [contract, setContract] = useState<Contract | null>(null);
+  const [document, setDocument] = useState<Document | null>(null);
+  const [content, setContent] = useState<StructuredDocument | null>(null);
+  const [docLoading, setDocLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [selectedSection, setSelectedSection] =
+    useState<DocumentSection | null>(null);
   const [loading, setLoading] = useState(true);
   const [openInviteModal, setOpenInviteModal] = useState(false);
 
@@ -56,8 +72,26 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
     }
   };
 
+  /** Fetch document content */
+  const fetchDocument = async () => {
+    try {
+      const response = await fetch(`/api/documents/${id}`);
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error);
+
+      setDocument(data.document);
+      setContent(data.document.content);
+    } catch (error) {
+      console.error("Error fetching document:", error);
+    } finally {
+      setDocLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchContractDetails();
+    fetchDocument();
   }, [id]);
 
   return (
@@ -83,15 +117,12 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
               href={`/contracts/${id}`}
               className="text-[#64748b] hover:text-indigo-600 transition-colors"
             >
-              {contract?.name}
+              {contract?.name ?? "Loading..."}
             </Link>
             <span className="text-gray-300">/</span>
-            <Link
-              href="#"
-              className="text-[#64748b] hover:text-indigo-600 transition-colors"
-            >
+            <span className="text-[#64748b] hover:text-indigo-600 transition-colors">
               Document Workspace
-            </Link>
+            </span>
           </nav>
         </div>
         <div className="absolute left-1/2 top-1/2 -translate-x-1 -translate-y-1/2">
@@ -206,12 +237,34 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
           </button>
         </aside>
         <main className="flex-1 bg-[#f1f5f9] relative overflow-y-auto flex justify-center p-8 scroll-smooth">
-          <div className="w-full max-w-4xl bg-white min-h-350 mb-20 shadow relative">
-            {/* Document content goes here */}
-            <div className="px-20 pb-20 text-justify leading-9 font-serif text-slate-700 text-[17px]">
-              <h1 className="text-3xl font-serif font-bold text-center text-[#0f172a] mb-3"></h1>
+          {docLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-gray-600">Loading document...</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="w-full max-w-4xl bg-white min-h-350 mb-20 shadow relative">
+              {/* paper padding */}
+              <div className="px-20 pb-20 pt-14">
+                {/* Optional title block */}
+                <h1 className="text-2xl font-serif font-bold text-center text-[#0f172a] mb-8">
+                  {document?.title ?? contract?.name}
+                </h1>
+
+                {content ? (
+                  <DocumentViewer
+                    document={content}
+                    activeSectionId={selectedSection?.id ?? null}
+                    onSectionClick={(s) => setSelectedSection(s)}
+                  />
+                ) : (
+                  <p className="text-slate-500">No document content.</p>
+                )}
+              </div>
+            </div>
+          )}
         </main>
         <aside className="w-15 bg-white border-l border-[#e2e8f0] flex flex-col items-center py-4 gap-4 shrink-0 z-20 shadow-sm transition-all duration-300">
           <button className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors mb-2 group relative">

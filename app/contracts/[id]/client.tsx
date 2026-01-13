@@ -214,14 +214,6 @@ const ContractDashboard = ({ id }: { id: string }) => {
                 <div className="grid grid-cols-2 gap-y-4 gap-x-2">
                   <div>
                     <div className="text-slate-400 uppercase text-[10px]">
-                      Facility Type
-                    </div>
-                    <div className="text-sm font-medium text-slate-900">
-                      Syndicated Term Loan
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-slate-400 uppercase text-[10px]">
                       Amount
                     </div>
                     <div className="text-sm font-medium text-slate-900">

@@ -72,9 +72,9 @@ const LoginPage = () => {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#8b5cf6]/15 rounded-full mix-blend-multiply filter blur-[100px] opacity-50 animate-blob delay-[4000] pointer-events-none "></div>
       <div className="relative z-10 w-full max-w-md mx-4 animate-slide-up">
         <div className="flex justify-center mb-8">
-          <a
+          <Link
             className="flex items-center gap-3 group cursor-pointer transition-transform hover:scale-105"
-            href="#"
+            href="/"
           >
             <div className="relative w-10 h-10 flex items-center justify-center">
               <div className="absolute inset-0 bg-[#4f46e5]/20 rounded-lg rotate-0 group-hover:rotate-12 transition-transform duration-300"></div>
@@ -84,7 +84,7 @@ const LoginPage = () => {
             <span className="text-2xl font-serif font-bold tracking-tight text-[#1e293b]">
               Accord <span className="text-cyan-500">.</span>
             </span>
-          </a>
+          </Link>
         </div>
         <div className="bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-8 md:p-10 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-600 via-cyan-500 to-violet-500"></div>
