@@ -12,11 +12,20 @@ import IssuesPanel from "./IssuesPanel";
 import ActivityPanel from "./ActivityPanel";
 import Image from "next/image";
 
-const WorkspaceSidebar = ({ issueContext, onClearContext, proposalContext, dealId, documentId, sectionId, onIssueCreated, proposalSectionId, onProposalCreated }: { issueContext?: string | null; onClearContext?: () => void; proposalContext?: string | null; dealId?: string; documentId?: string; sectionId?: string | null; onIssueCreated?: () => void; proposalSectionId?: string | null; onProposalCreated?: () => void }) => {
+const WorkspaceSidebar = ({ issueContext, onClearContext, proposalContext, dealId, documentId, sectionId, onIssueCreated, proposalSectionId, onProposalCreated, userRole, selectedProposalId }: { issueContext?: string | null; onClearContext?: () => void; proposalContext?: string | null; dealId?: string; documentId?: string; sectionId?: string | null; onIssueCreated?: () => void; proposalSectionId?: string | null; onProposalCreated?: () => void; userRole?: string; selectedProposalId?: string | null }) => {
   const [expanded, setExpanded] = useState(false);
   const [openProposals, setOpenProposals] = useState(false);
   const [openIssues, setOpenIssues] = useState(false);
   const [openActivity, setOpenActivity] = useState(false);
+
+  useEffect(() => {
+    if (selectedProposalId) {
+      setExpanded(true);
+      setOpenProposals(true);
+      setOpenIssues(false);
+      setOpenActivity(false);
+    }
+  }, [selectedProposalId]);
 
   useEffect(() => {
     if (issueContext) {
@@ -131,8 +140,8 @@ const WorkspaceSidebar = ({ issueContext, onClearContext, proposalContext, dealI
               Activity
             </button>
           </div>
-          {openProposals && <ProposalPanel proposalContext={proposalContext} onClearContext={onClearContext} dealId={dealId} documentId={documentId} sectionId={proposalSectionId} onProposalCreated={onProposalCreated} />}
-          {openIssues && <IssuesPanel issueContext={issueContext} onClearContext={onClearContext} dealId={dealId} documentId={documentId} sectionId={sectionId} onIssueCreated={onIssueCreated} />}
+          {openProposals && <ProposalPanel proposalContext={proposalContext} onClearContext={onClearContext} dealId={dealId} documentId={documentId} sectionId={proposalSectionId} onProposalCreated={onProposalCreated} userRole={userRole} selectedProposalId={selectedProposalId} />}
+          {openIssues && <IssuesPanel issueContext={issueContext} onClearContext={onClearContext} dealId={dealId} documentId={documentId} sectionId={sectionId} onIssueCreated={onIssueCreated} userRole={userRole} />}
           {openActivity && <ActivityPanel dealId={dealId} />}
         </div>
       )}

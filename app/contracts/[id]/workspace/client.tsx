@@ -63,7 +63,12 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
   const [issueContext, setIssueContext] = useState<string | null>(null);
   const [issueSectionId, setIssueSectionId] = useState<string | null>(null);
   const [proposalContext, setProposalContext] = useState<string | null>(null);
-  const [proposalSectionId, setProposalSectionId] = useState<string | null>(null);
+  const [proposalSectionId, setProposalSectionId] = useState<string | null>(
+    null
+  );
+  const [selectedProposalId, setSelectedProposalId] = useState<string | null>(
+    null
+  );
   const [proposals, setProposals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [openInviteModal, setOpenInviteModal] = useState(false);
@@ -75,6 +80,10 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
   const PAGE_HEIGHT = 1120; // px
   const PAGE_PADDING = 32; // px
   const PAGE_MAX_WIDTH = 720; // match viewer maxWidth
+
+  const refreshAll = async () => {
+    await Promise.all([fetchDocument(), fetchIssues(), fetchProposals()]);
+  };
 
   // Fetch details for the specified contractId
   const fetchContractDetails = async () => {
@@ -211,7 +220,7 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
           <div className="h-5 w-px bg-gray-200"></div>
           <nav className=" flex items-center gap-2 text-xs">
             <Link
-              href="#"
+              href="/contracts"
               className="text-[#64748b] hover:text-indigo-600 transition-colors"
             >
               Contracts
@@ -251,20 +260,6 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
           </div>
         </div>
       </header>
-      <div className="h-12 bg-white border-b border-[#e2e8f0] flex items-center justify-between px-4 shrink-0 z-20">
-        <div className="flex items-center gap-4 w-1/3">
-          <div className="relative w-full max-w-sm">
-            <span className="absolute left-2.5 top-1 text-gray-400 text-[18px]">
-              <Search fontSize="inherit" />
-            </span>
-            <input
-              type="text"
-              placeholder="Search clause or term"
-              className="w-full pl-9 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 outline-none transition-shadow placeholder:text-gray-400"
-            />
-          </div>
-        </div>
-      </div>
       <div className="flex flex-1 overflow-hidden">
         <main className="flex-1 bg-[#f1f5f9] relative overflow-y-auto flex justify-center p-8 scroll-smooth">
           {docLoading ? (
@@ -297,7 +292,9 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
                         activeSectionId={selectedSection?.id ?? null}
                         onSectionClick={() => {}}
                         flaggedSectionIds={issues.map((i) => i.section_id)}
-                        proposalSectionIds={proposals.map((p) => p.section_id).filter(Boolean)}
+                        proposalSectionIds={proposals
+                          .map((p) => p.section_id)
+                          .filter(Boolean)}
                         readOnly
                       />
                     </div>
@@ -310,7 +307,9 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
                             document={content}
                             activeSectionId={selectedSection?.id ?? null}
                             flaggedSectionIds={issues.map((i) => i.section_id)}
-                            proposalSectionIds={proposals.map((p) => p.section_id).filter(Boolean)}
+                            proposalSectionIds={proposals
+                              .map((p) => p.section_id)
+                              .filter(Boolean)}
                             onSectionClick={(s) =>
                               setSelectedSection((prev) =>
                                 prev?.id === s.id ? null : s
@@ -323,6 +322,12 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
                             onProposeAmendment={(s) => {
                               setProposalContext(s.content);
                               setProposalSectionId(s.id);
+                            }}
+                            onProposalClick={(sectionId) => {
+                              const proposal = proposals.find(
+                                (p) => p.section_id === sectionId
+                              );
+                              if (proposal) setSelectedProposalId(proposal.id);
                             }}
                           />
                         </div>
@@ -397,7 +402,9 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
                                 flaggedSectionIds={issues.map(
                                   (i) => i.section_id
                                 )}
-                                proposalSectionIds={proposals.map((p) => p.section_id).filter(Boolean)}
+                                proposalSectionIds={proposals
+                                  .map((p) => p.section_id)
+                                  .filter(Boolean)}
                                 onSectionClick={(s) => setSelectedSection(s)}
                                 onRaiseIssue={(s) => {
                                   setIssueContext(s.content);
@@ -406,6 +413,13 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
                                 onProposeAmendment={(s) => {
                                   setProposalContext(s.content);
                                   setProposalSectionId(s.id);
+                                }}
+                                onProposalClick={(sectionId) => {
+                                  const proposal = proposals.find(
+                                    (p) => p.section_id === sectionId
+                                  );
+                                  if (proposal)
+                                    setSelectedProposalId(proposal.id);
                                 }}
                               />
                             </div>
@@ -428,14 +442,17 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
           documentId={document?.id}
           sectionId={issueSectionId}
           proposalSectionId={proposalSectionId}
+          selectedProposalId={selectedProposalId}
+          userRole={user?.role}
           onClearContext={() => {
             setIssueContext(null);
             setIssueSectionId(null);
             setProposalContext(null);
             setProposalSectionId(null);
+            setSelectedProposalId(null);
           }}
           onIssueCreated={fetchIssues}
-          onProposalCreated={fetchProposals}
+          onProposalCreated={refreshAll}
         />
       </div>
     </div>

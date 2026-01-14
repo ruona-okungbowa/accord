@@ -68,10 +68,37 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { deal_id, document_id, title, summary, proposed_text, section_id } = body;
+    const { deal_id, document_id, title, summary, proposed_text, section_id } =
+      body;
 
     if (!deal_id || !document_id || !title || !proposed_text) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Verify user can propose (borrower, borrower_counsel, or arranger_counsel)
+    const { data: participant } = await supabase
+      .from("deal_participants")
+      .select("role")
+      .eq("deal_id", deal_id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (
+      !participant ||
+      !["borrower", "borrower_counsel", "arranger_counsel"].includes(
+        participant.role
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Only borrower, borrower counsel, or arranger counsel can propose amendments",
+        },
+        { status: 403 }
+      );
     }
 
     const { data: proposal, error } = await supabase
@@ -106,6 +133,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ proposal }, { status: 201 });
   } catch (error) {
     console.error("POST proposals route error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

@@ -79,12 +79,15 @@ const LandingPage = () => {
             </Link>
           </div>
           <div className="flex items-center gap-4">
-            <button className="bg-slate-900 hover:bg-slate-800 text-white pl-5 pr-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg shadow-slate-900/20 transition-all hover:shadow-slate-900/30 hover:-translate-y-0.5 flex items-center gap-2 group broder border-white/10 ring-1 ring-white/20 backdrop-blur-sm">
+            <Link
+              href="/demo"
+              className="bg-slate-900 hover:bg-slate-800 text-white pl-5 pr-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg shadow-slate-900/20 transition-all hover:shadow-slate-900/30 hover:-translate-y-0.5 flex items-center gap-2 group broder border-white/10 ring-1 ring-white/20 backdrop-blur-sm"
+            >
               <span>Watch Demo</span>
               <span className="group-hover:translate-x-0.5 transition-transform text-[16px]">
                 <ArrowForward fontSize="inherit" />
               </span>
-            </button>
+            </Link>
           </div>
         </div>
       </nav>
@@ -161,15 +164,15 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
           <div className="text-center mb-20 max-w-3xl mx-auto">
             <span className="inline-block py-1 px-3 rounded border border-indigo-600/20 bg-indigo-600/5 text-indigo-600 font-mono text-[10px] font-bold tracking-widest uppercase mb-4">
-              Core Banking Infrastructure
+              Solution Overiew
             </span>
             <h2 className="text-4xl md:text-5xl font-serif text-slate-800 mb-6 tracking-tight">
-              Insitutional-Grade Infrastructure
+              Built for High-Stakes Finance
             </h2>
             <p className="text-slate-600 text-lg md:text-xl font-light leading-relaxed">
-              Engineered for the rigorous demands of capital markets
-              transactions, ensuring data integrity, security, and complete
-              auditability.
+              Stop wasting time searching for the "latest" version. Accord
+              centralises communication so you can focus on the deal, not the
+              paperwork.
             </p>
           </div>
           <div className="grid-grid-cols-1 md:grid-cols-12 grid-rows-2 gap-8">
@@ -340,12 +343,11 @@ const LandingPage = () => {
               </div>
               <div className="text-center px-4">
                 <h3 className="text-lg font-bold text-slate-800 mb-2">
-                  Smart Ingestion
+                  Upload
                 </h3>
                 <p className="text-sm text-slate-500 leading-relaxed mb-">
-                  Ingest term sheets and precedent documents. Proprietary
-                  parsing identifies defined terms and commercial variables to
-                  populate the initial draft.
+                  Upload loan documents. Accord's parser identifies the key
+                  commercial terms and sets the foundation
                 </p>
                 <div className="bg-white p-3 rounded border border-slate-200 text-left shadow-sm opacity-60 group-hover:opacity-100 transition-opacity transform group-hover:-translate-y-1 duration-300">
                   <div className="flex items-center gap-2 mb-2 border-b border-slate-100 pb-2">
@@ -526,7 +528,22 @@ const LandingPage = () => {
       <section
         className="py-32 bg-slate-900 border-t border-slate-800 relative overflow-hidden"
         id="security"
-      ></section>
+      >
+        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-4xl md:text-5xl font-serif text-white mb-6">
+            Let's Fix Loan Negotiations
+          </h2>
+          <p className="text-slate-400 text-lg mb-10 max-w-2xl mx-auto">
+            Accord is the future of syndicated loan documentation. Join us in
+            building a faster, more transparent financial ecosystem.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <button className="px-8 py-4 bg-indigo-600 text-white rounded-lg font-bold shadow-lg hover:bg-indigo-600/90 transition-all w-full sm:w-auto">
+              View Hackathon Demo
+            </button>
+          </div>
+        </div>
+      </section>
       <footer className="bg-slate-50 pt-20 pb-12 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="flex flex-col md:flex-row justify-between items-start gap-12">

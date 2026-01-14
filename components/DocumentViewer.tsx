@@ -11,6 +11,7 @@ interface Props {
   onSectionClick?: (section: DocumentSection) => void;
   onRaiseIssue?: (section: DocumentSection) => void;
   onProposeAmendment?: (section: DocumentSection) => void;
+  onProposalClick?: (sectionId: string) => void;
   readOnly?: boolean;
   containerRef?: React.Ref<HTMLDivElement>;
   visibleSectionIds?: string[];
@@ -26,6 +27,7 @@ const DocumentViewer = ({
   onSectionClick,
   onRaiseIssue,
   onProposeAmendment,
+  onProposalClick,
   readOnly = false,
   flaggedSectionIds = [],
   proposalSectionIds = [],
@@ -108,6 +110,7 @@ const DocumentViewer = ({
   }
 
   function renderSection(section: DocumentSection) {
+    if (!section || !section.id) return null;
     const isSelected = activeSectionId === section.id;
     const isHover = hoverId === section.id;
     const isFlagged = flagged.has(section.id);
@@ -150,12 +153,12 @@ const DocumentViewer = ({
 
     const renderProposalBadge = () => {
       if (!hasProposal) return null;
-      const topOffset = isFlagged ? 'top-7' : 'top-0';
+      const topOffset = isFlagged ? "top-7" : "top-0";
       return (
         <div
           onClick={(e) => {
             e.stopPropagation();
-            onProposeAmendment?.(section);
+            onProposalClick?.(section.id);
           }}
           className={`absolute -left-8 ${topOffset} w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm cursor-pointer hover:bg-blue-600 transition-colors`}
         >

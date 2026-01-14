@@ -1,5 +1,5 @@
 "use client";
-import { EditSquare, ExpandMore, NoteAdd, Send } from "@mui/icons-material";
+import { Check, Close as CloseIcon, NoteAdd } from "@mui/icons-material";
 import React, { useState, useEffect } from "react";
 
 const ProposalPanel = ({
@@ -9,6 +9,8 @@ const ProposalPanel = ({
   documentId,
   sectionId,
   onProposalCreated,
+  userRole,
+  selectedProposalId,
 }: {
   proposalContext?: string | null;
   onClearContext?: () => void;
@@ -16,16 +18,53 @@ const ProposalPanel = ({
   documentId?: string;
   sectionId?: string | null;
   onProposalCreated?: () => void;
+  userRole?: string;
+  selectedProposalId?: string | null;
 }) => {
   const [formOpen, setFormOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<any | null>(null);
   const [proposals, setProposals] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [reviewNotes, setReviewNotes] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     summary: "",
     proposedText: "",
   });
+
+  const canPropose = [
+    "borrower",
+    "borrower_counsel",
+    "arranger_counsel",
+  ].includes(userRole || "");
+  const canReview = userRole === "arranger_counsel";
+
+  // Debug logging
+  useEffect(() => {
+    console.log("ProposalPanel - userRole:", userRole);
+    console.log("ProposalPanel - canReview:", canReview);
+    console.log("ProposalPanel - selectedProposal:", selectedProposal);
+    if (selectedProposal) {
+      console.log(
+        "ProposalPanel - selectedProposal.status:",
+        selectedProposal.status
+      );
+      console.log(
+        "ProposalPanel - condition check:",
+        canReview && selectedProposal.status === "pending"
+      );
+    }
+  }, [userRole, canReview, selectedProposal]);
+
+  useEffect(() => {
+    if (selectedProposalId) {
+      const proposal = proposals.find((p) => p.id === selectedProposalId);
+      if (proposal) {
+        setSelectedProposal(proposal);
+        setFormOpen(false);
+      }
+    }
+  }, [selectedProposalId, proposals]);
 
   useEffect(() => {
     if (proposalContext && sectionId) {
@@ -93,6 +132,31 @@ const ProposalPanel = ({
     }
   };
 
+  const handleReview = async (
+    proposalId: string,
+    status: "accepted" | "rejected"
+  ) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/proposals/${proposalId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, review_notes: reviewNotes }),
+      });
+
+      if (response.ok) {
+        setReviewNotes("");
+        setSelectedProposal(null);
+        fetchProposals();
+        onProposalCreated?.();
+      }
+    } catch (error) {
+      console.error("Error reviewing proposal:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return formOpen ? (
     <div className="bg-slate-50 flex flex-col overflow-hidden flex-1">
       <div className="p-4 bg-blue-50/50 border-b border-[#e2e8f0]">
@@ -102,19 +166,28 @@ const ProposalPanel = ({
           </span>
         </div>
         <p className="text-[11px] text-[#64748b] italic">
-          {proposalContext || '"...excluding any restructuring costs incurred during such period;"'}
+          {proposalContext ||
+            '"...excluding any restructuring costs incurred during such period;"'}
         </p>
       </div>
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="flex-1 overflow-y-auto p-5 space-y-6"
+      >
         <div className="space-y-2">
-          <label htmlFor="proposedText" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+          <label
+            htmlFor="proposedText"
+            className="text-[11px] font-bold text-gray-500 uppercase tracking-wider"
+          >
             Proposed Text <span className="text-red-500 text-[14px]">*</span>
           </label>
           <textarea
             name="proposedText"
             id="proposedText"
             value={formData.proposedText}
-            onChange={(e) => setFormData({ ...formData, proposedText: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, proposedText: e.target.value })
+            }
             rows={4}
             required
             placeholder="Suggest your amendment here..."
@@ -122,7 +195,10 @@ const ProposalPanel = ({
           ></textarea>
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="title" className="font-bold text-gray-500 uppercase tracking-wider text-[11px]">
+          <label
+            htmlFor="title"
+            className="font-bold text-gray-500 uppercase tracking-wider text-[11px]"
+          >
             Proposal Title <span className="text-red-500 text-[14px]">*</span>
           </label>
           <input
@@ -130,21 +206,28 @@ const ProposalPanel = ({
             name="title"
             id="title"
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
             required
             placeholder="Summarize your proposal"
             className="w-full px-3 py-2 bg-white border border-[#e2e8f0] rounded text-sm focus:ring-1 focus:ring-violet-500 focus:border-violet-500 outline-none"
           />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="summary" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+          <label
+            htmlFor="summary"
+            className="text-[11px] font-bold text-gray-500 uppercase tracking-wider"
+          >
             Rationale
           </label>
           <textarea
             name="summary"
             id="summary"
             value={formData.summary}
-            onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, summary: e.target.value })
+            }
             placeholder="Explain the reasoning..."
             className="w-full h-20 px-3 py-2 bg-white border border-[#e2e8f0] rounded text-sm focus:ring-1 focus:ring-violet-500 focus:border-violet-500 outline-none resize-none"
           ></textarea>
@@ -174,13 +257,17 @@ const ProposalPanel = ({
   ) : (
     <div className="flex-1 flex flex-col bg-slate-50">
       <div className="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
-        <h3 className="text-sm font-bold text-[#0f172a]">Proposals ({proposals.length})</h3>
-        <button
-          onClick={() => setFormOpen(true)}
-          className="px-3 py-1 text-xs font-bold text-violet-500 hover:bg-violet-50 rounded transition-all"
-        >
-          + New Proposal
-        </button>
+        <h3 className="text-sm font-bold text-[#0f172a]">
+          Proposals ({proposals.length})
+        </h3>
+        {canPropose && (
+          <button
+            onClick={() => setFormOpen(true)}
+            className="px-3 py-1 text-xs font-bold text-violet-500 hover:bg-violet-50 rounded transition-all"
+          >
+            + New Proposal
+          </button>
+        )}
       </div>
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
@@ -193,39 +280,97 @@ const ProposalPanel = ({
               <NoteAdd fontSize="inherit" />
             </span>
           </div>
-          <h3 className="font-bold text-lg text-[#0f172a] mb-2">No proposals yet</h3>
+          <h3 className="font-bold text-lg text-[#0f172a] mb-2">
+            No proposals yet
+          </h3>
           <p className="leading-relaxed mb-8 text-[13px] text-[#64748b]">
-            Select a clause in the document to propose a change and start the negotiation
+            Select a clause in the document to propose a change and start the
+            negotiation
           </p>
         </div>
       ) : selectedProposal ? (
-        <div className="flex-1 flex flex-col bg-white">
-          <div className="p-4 border-b border-[#e2e8f0]">
-            <button
-              onClick={() => setSelectedProposal(null)}
-              className="text-xs text-violet-500 hover:text-violet-700 mb-3 flex items-center gap-1"
-            >
-              ← Back to all proposals
-            </button>
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="font-bold text-base text-[#0f172a]">{selectedProposal.title}</h3>
-              <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${
-                selectedProposal.status === "accepted" ? "bg-green-100 text-green-600" :
-                selectedProposal.status === "rejected" ? "bg-red-100 text-red-600" :
-                "bg-blue-100 text-blue-600"
-              }`}>{selectedProposal.status}</span>
-            </div>
-            {selectedProposal.summary && (
-              <p className="text-sm text-[#64748b] mb-3">{selectedProposal.summary}</p>
-            )}
-            <div className="text-xs text-gray-400 mb-3">
-              Proposed by {selectedProposal.author?.first_name} {selectedProposal.author?.last_name}
-            </div>
-            <div className="p-3 bg-slate-50 rounded border border-slate-200">
-              <p className="text-xs font-bold text-slate-500 uppercase mb-1">Proposed Text:</p>
-              <p className="text-sm text-[#0f172a]">{selectedProposal.proposed_text}</p>
+        <div className="flex-1 flex flex-col bg-white overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4 border-b border-[#e2e8f0]">
+              <button
+                onClick={() => setSelectedProposal(null)}
+                className="text-xs text-violet-500 hover:text-violet-700 mb-3 flex items-center gap-1"
+              >
+                ← Back to all proposals
+              </button>
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="font-bold text-base text-[#0f172a]">
+                  {selectedProposal.title}
+                </h3>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${
+                    selectedProposal.status === "approved"
+                      ? "bg-green-100 text-green-600"
+                      : selectedProposal.status === "rejected"
+                      ? "bg-red-100 text-red-600"
+                      : "bg-blue-100 text-blue-600"
+                  }`}
+                >
+                  {selectedProposal.status}
+                </span>
+              </div>
+              {selectedProposal.summary && (
+                <p className="text-sm text-[#64748b] mb-3">
+                  {selectedProposal.summary}
+                </p>
+              )}
+              <div className="text-xs text-gray-400 mb-3">
+                Proposed by {selectedProposal.author?.first_name}{" "}
+                {selectedProposal.author?.last_name}
+              </div>
+              <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                <p className="text-xs font-bold text-slate-500 uppercase mb-1">
+                  Proposed Text:
+                </p>
+                <p className="text-sm text-[#0f172a]">
+                  {selectedProposal.proposed_text}
+                </p>
+              </div>
             </div>
           </div>
+          {canReview &&
+            (selectedProposal.status === "pending" ||
+              selectedProposal.status === "draft") && (
+              <div className="p-4 border-t border-[#e2e8f0] bg-slate-50">
+                <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">
+                  Review Notes (Optional)
+                </label>
+                <textarea
+                  value={reviewNotes}
+                  onChange={(e) => setReviewNotes(e.target.value)}
+                  placeholder="Add notes about your decision..."
+                  className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded mb-3 focus:ring-1 focus:ring-violet-500 outline-none resize-none"
+                  rows={3}
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() =>
+                      handleReview(selectedProposal.id, "accepted")
+                    }
+                    disabled={loading}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded shadow-sm transition-all disabled:opacity-50"
+                  >
+                    <Check fontSize="small" />
+                    {loading ? "Approving..." : "Approve"}
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleReview(selectedProposal.id, "rejected")
+                    }
+                    disabled={loading}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded shadow-sm transition-all disabled:opacity-50"
+                  >
+                    <CloseIcon fontSize="small" />
+                    {loading ? "Rejecting..." : "Reject"}
+                  </button>
+                </div>
+              </div>
+            )}
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -236,18 +381,29 @@ const ProposalPanel = ({
               className="bg-white border border-[#e2e8f0] rounded-lg p-4 hover:shadow-sm transition-shadow cursor-pointer"
             >
               <div className="flex items-start justify-between mb-2">
-                <h4 className="font-bold text-sm text-[#0f172a]">{proposal.title}</h4>
-                <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${
-                  proposal.status === "accepted" ? "bg-green-100 text-green-600" :
-                  proposal.status === "rejected" ? "bg-red-100 text-red-600" :
-                  "bg-blue-100 text-blue-600"
-                }`}>{proposal.status}</span>
+                <h4 className="font-bold text-sm text-[#0f172a]">
+                  {proposal.title}
+                </h4>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${
+                    proposal.status === "approved"
+                      ? "bg-green-100 text-green-600"
+                      : proposal.status === "rejected"
+                      ? "bg-red-100 text-red-600"
+                      : "bg-blue-100 text-blue-600"
+                  }`}
+                >
+                  {proposal.status}
+                </span>
               </div>
               {proposal.summary && (
-                <p className="text-xs text-[#64748b] mb-2">{proposal.summary}</p>
+                <p className="text-xs text-[#64748b] mb-2">
+                  {proposal.summary}
+                </p>
               )}
               <div className="text-[10px] text-gray-400">
-                Proposed by {proposal.author?.first_name} {proposal.author?.last_name}
+                Proposed by {proposal.author?.first_name}{" "}
+                {proposal.author?.last_name}
               </div>
             </div>
           ))}

@@ -1,5 +1,5 @@
 "use client";
-import { Close, ExpandMore, Search, Warning } from "@mui/icons-material";
+import { Close, ExpandMore, Search, Warning, CheckCircle } from "@mui/icons-material";
 import React, { useState, useEffect } from "react";
 
 const IssuesPanel = ({
@@ -9,6 +9,7 @@ const IssuesPanel = ({
   documentId,
   sectionId,
   onIssueCreated,
+  userRole,
 }: {
   issueContext?: string | null;
   onClearContext?: () => void;
@@ -16,17 +17,21 @@ const IssuesPanel = ({
   documentId?: string;
   sectionId?: string | null;
   onIssueCreated?: () => void;
+  userRole?: string;
 }) => {
   const [formOpen, setFormOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<any | null>(null);
   const [issues, setIssues] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [resolutionNotes, setResolutionNotes] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     type: "Ambiguity",
     priority: "Medium",
   });
+
+  const canResolve = userRole === "arranger_counsel";
 
   useEffect(() => {
     if (issueContext && sectionId) {
@@ -39,7 +44,6 @@ const IssuesPanel = ({
         setSelectedIssue(null);
       }
     } else {
-      // When panel opens without context, show list
       setFormOpen(false);
       setSelectedIssue(null);
     }
@@ -48,7 +52,6 @@ const IssuesPanel = ({
   useEffect(() => {
     if (dealId && !formOpen) {
       fetchIssues();
-      // Reset selected issue when switching to list view
       setSelectedIssue(null);
     }
   }, [dealId, formOpen]);
@@ -98,6 +101,27 @@ const IssuesPanel = ({
       }
     } catch (error) {
       console.error("Error creating issue:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResolve = async (issueId: string, status: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/issues/${issueId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, resolution_notes: resolutionNotes }),
+      });
+
+      if (response.ok) {
+        setResolutionNotes("");
+        setSelectedIssue(null);
+        fetchIssues();
+      }
+    } catch (error) {
+      console.error("Error resolving issue:", error);
     } finally {
       setLoading(false);
     }
@@ -249,45 +273,83 @@ const IssuesPanel = ({
           </p>
         </div>
       ) : selectedIssue ? (
-        <div className="flex-1 flex flex-col bg-white">
-          <div className="p-4 border-b border-[#e2e8f0]">
-            <button
-              onClick={() => setSelectedIssue(null)}
-              className="text-xs text-violet-500 hover:text-violet-700 mb-3 flex items-center gap-1"
-            >
-              ← Back to all issues
-            </button>
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="font-bold text-base text-[#0f172a]">{selectedIssue.title}</h3>
-              <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${
-                selectedIssue.priority === "high" ? "bg-red-100 text-red-600" :
-                selectedIssue.priority === "medium" ? "bg-yellow-100 text-yellow-600" :
-                "bg-gray-100 text-gray-600"
-              }`}>{selectedIssue.priority}</span>
+        <div className="flex-1 flex flex-col bg-white overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4 border-b border-[#e2e8f0]">
+              <button
+                onClick={() => setSelectedIssue(null)}
+                className="text-xs text-violet-500 hover:text-violet-700 mb-3 flex items-center gap-1"
+              >
+                ← Back to all issues
+              </button>
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="font-bold text-base text-[#0f172a]">{selectedIssue.title}</h3>
+                <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${
+                  selectedIssue.priority === "high" ? "bg-red-100 text-red-600" :
+                  selectedIssue.priority === "medium" ? "bg-yellow-100 text-yellow-600" :
+                  "bg-gray-100 text-gray-600"
+                }`}>{selectedIssue.priority}</span>
+              </div>
+              <div className="mb-3">
+                <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${
+                  selectedIssue.status === "legally_final" ? "bg-green-100 text-green-600" :
+                  selectedIssue.status === "commercially_agreed" ? "bg-blue-100 text-blue-600" :
+                  selectedIssue.status === "under_negotiation" ? "bg-yellow-100 text-yellow-600" :
+                  "bg-gray-100 text-gray-600"
+                }`}>{selectedIssue.status?.replace(/_/g, " ")}</span>
+              </div>
+              {selectedIssue.description && (
+                <p className="text-sm text-[#64748b] mb-3">{selectedIssue.description}</p>
+              )}
+              <div className="text-xs text-gray-400">
+                Created by {selectedIssue.created_by?.first_name} {selectedIssue.created_by?.last_name}
+              </div>
             </div>
-            {selectedIssue.description && (
-              <p className="text-sm text-[#64748b] mb-3">{selectedIssue.description}</p>
-            )}
-            <div className="text-xs text-gray-400">
-              Created by {selectedIssue.created_by?.first_name} {selectedIssue.created_by?.last_name}
+            <div className="flex-1 p-4 bg-slate-50">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Discussion</h4>
+              <div className="text-sm text-gray-500 text-center py-8">
+                No comments yet. Start the discussion.
+              </div>
             </div>
           </div>
-          <div className="flex-1 p-4 bg-slate-50">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Discussion</h4>
-            <div className="text-sm text-gray-500 text-center py-8">
-              No comments yet. Start the discussion.
+          {canResolve && selectedIssue.status !== "legally_final" && (
+            <div className="p-4 border-t border-[#e2e8f0] bg-slate-50">
+              <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">
+                Resolution Notes (Optional)
+              </label>
+              <textarea
+                value={resolutionNotes}
+                onChange={(e) => setResolutionNotes(e.target.value)}
+                placeholder="Add notes about the resolution..."
+                className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded mb-3 focus:ring-1 focus:ring-violet-500 outline-none resize-none"
+                rows={3}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleResolve(selectedIssue.id, "under_negotiation")}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 text-sm font-bold text-white bg-yellow-600 hover:bg-yellow-700 rounded shadow-sm transition-all disabled:opacity-50"
+                >
+                  Under Negotiation
+                </button>
+                <button
+                  onClick={() => handleResolve(selectedIssue.id, "commercially_agreed")}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded shadow-sm transition-all disabled:opacity-50"
+                >
+                  Commercially Agreed
+                </button>
+                <button
+                  onClick={() => handleResolve(selectedIssue.id, "legally_final")}
+                  disabled={loading}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded shadow-sm transition-all disabled:opacity-50"
+                >
+                  <CheckCircle fontSize="small" />
+                  Resolve
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="p-4 border-t border-[#e2e8f0] bg-white">
-            <textarea
-              placeholder="Add a comment..."
-              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-md focus:ring-1 focus:ring-violet-500 focus:border-violet-500 outline-none resize-none"
-              rows={3}
-            ></textarea>
-            <button className="mt-2 px-4 py-2 text-sm font-bold text-white bg-violet-500 hover:bg-violet-800 rounded shadow-sm transition-all">
-              Comment
-            </button>
-          </div>
+          )}
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto p-4 space-y-3">

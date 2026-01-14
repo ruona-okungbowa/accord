@@ -589,7 +589,7 @@ const ContractDashboard = ({ id }: { id: string }) => {
         width={800}
         borderRadius="10px"
       >
-        <InvitePartipantsModal closeModal={() => setOpenInviteModal(false)} />
+        <InvitePartipantsModal closeModal={() => setOpenInviteModal(false)} dealId={id} />
       </CenterModal>
     </div>
   );
