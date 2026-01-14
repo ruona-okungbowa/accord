@@ -2,10 +2,11 @@ import { ArrowForward, Explore, PlayArrow } from "@mui/icons-material";
 import { Lock } from "lucide-react";
 import logo from "@/public/logo_colour.png";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 
 const DemoPage = () => {
+  const [isPlaying, setIsPlaying] = useState(false);
   return (
     <div className="bg-slate-50 min-h-screen text-slate-800 font-sans antialiased overflow-x-hidden selection:bg-violet-500 selection:text-white">
       <nav className="top-0 fixed z-50 w-full transition-all duration-300">
@@ -92,22 +93,35 @@ const DemoPage = () => {
           </div>
           <div className="relative mb-24 max-w-6xl mx-auto">
             <div className="video-container group bg-slate-800 overflow-hidden">
-              <div className="absolute inset-0 bg-linear-to-br from-slate-800 via-slate-900 to-indigo-600 opacity-90"></div>
-              <div className="absolute inset-0 flex items-center justify-center flex-col text-white z-10">
-                <button className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-2xl">
-                  <span className=" text-5xl fill-current">
-                    <PlayArrow fontSize="inherit" />
-                  </span>
-                </button>
-                <p className="mt-6 font-mono text-sm tracking-widest uppercase opacity-70">
-                  Project Pitch Walkthrough (3:00)
-                </p>
-              </div>
-              <img
-                alt="Video Placeholder"
-                className="placeholder-img opacity-40 mix-blend-overlay"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYlLWc6yKoELvjYU4craNFJ8J6wHaB_pwqFHPjN6oyaYmqLL0fCoZkap7dBDQrunq0iNjcKGXeEwuK09IZf8gnCPP30nSE0rScdjzXyro1x0Um22G5Fq0zejuxrl4mWhDnrpZ2Z8BkVwsRco-FyR5d-id0typDLGSr5ZQQQ9lu1J_x5bmSHRGX2nMd5YiaFuR0cjcM2W9SL0AnxjGGQcl-_g4Kg9qNFHZIbwbS4ahrvi1AfZTihVTGRfNGdpcddQlYzBmmdD3b1HY"
-              />
+              {!isPlaying ? (
+                <>
+                  <div className="absolute inset-0 bg-linear-to-br from-slate-800 via-slate-900 to-indigo-600 opacity-90"></div>
+                  <div className="absolute inset-0 flex items-center justify-center flex-col text-white z-10">
+                    <button className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-2xl">
+                      <span className=" text-5xl fill-current">
+                        <PlayArrow fontSize="inherit" />
+                      </span>
+                    </button>
+                    <p className="mt-6 font-mono text-sm tracking-widest uppercase opacity-70">
+                      Project Pitch Walkthrough (3:00)
+                    </p>
+                  </div>
+                  <img
+                    alt="Video Placeholder"
+                    className="placeholder-img opacity-40 mix-blend-overlay"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYlLWc6yKoELvjYU4craNFJ8J6wHaB_pwqFHPjN6oyaYmqLL0fCoZkap7dBDQrunq0iNjcKGXeEwuK09IZf8gnCPP30nSE0rScdjzXyro1x0Um22G5Fq0zejuxrl4mWhDnrpZ2Z8BkVwsRco-FyR5d-id0typDLGSr5ZQQQ9lu1J_x5bmSHRGX2nMd5YiaFuR0cjcM2W9SL0AnxjGGQcl-_g4Kg9qNFHZIbwbS4ahrvi1AfZTihVTGRfNGdpcddQlYzBmmdD3b1HY"
+                  />
+                </>
+              ) : (
+                <iframe
+                  src="https://youtu.be/4321RFc3VbU"
+                  title="Accord Demo Video"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  className="w-full h-full absolute inset-0"
+                ></iframe>
+              )}
             </div>
             <div className="absolute -top-6 -left-6 w-32 h-32 bg-cyan-500/20 rounded-full blur-3xl -z-10"></div>
             <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-violet-500/20 rounded-full blur-3xl -z-10"></div>
@@ -169,6 +183,9 @@ const DemoPage = () => {
                   </p>
                 </div>
               </div>
+              <p className="text-slate-600 leading-relaxed">
+                Right now the invite participants is not working
+              </p>
             </div>
             <div className="lg:col-span-5">
               <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-xl shadow-slate-200/50 sticky top-28">
