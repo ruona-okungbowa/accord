@@ -41,7 +41,7 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
   const location = process.env.GOOGLE_CLOUD_LOCATION!;
   const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID!;
   const processorId = process.env.GOOGLE_DOCUMENT_AI_PROCESSOR_ID!;
-  const keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS; // strongly recommended
+  const keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
   if (!location || !projectId || !processorId) {
     throw new Error(

@@ -16,9 +16,16 @@ import {
   KeyboardDoubleArrowRight,
   Search,
   Verified,
+  ChevronLeft,
+  ChevronRight,
+  AddComment,
+  EditNote,
 } from "@mui/icons-material";
+import Image from "next/image";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import logo from "@/public/logo.svg";
+import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
+import WorkspaceSidebar from "@/components/WorkspaceSidebar";
 
 interface Contract {
   id: string;
@@ -52,8 +59,18 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
   const [user, setUser] = useState<User | null>(null);
   const [selectedSection, setSelectedSection] =
     useState<DocumentSection | null>(null);
+  const [issueContext, setIssueContext] = useState<string | null>(null);
+  const [proposalContext, setProposalContext] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [openInviteModal, setOpenInviteModal] = useState(false);
+  const measureRef = useRef<HTMLDivElement | null>(null);
+  const paperRef = useRef<HTMLDivElement | null>(null);
+  const [pages, setPages] = useState<string[][]>([]);
+  const [pageIndex, setPageIndex] = useState(0);
+
+  const PAGE_HEIGHT = 1120; // px
+  const PAGE_PADDING = 32; // px
+  const PAGE_MAX_WIDTH = 720; // match viewer maxWidth
 
   // Fetch details for the specified contractId
   const fetchContractDetails = async () => {
@@ -94,14 +111,71 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
     fetchDocument();
   }, [id]);
 
+  // measure hidden rendered sections and compute pages
+  useLayoutEffect(() => {
+    const measureAndPaginate = () => {
+      if (!measureRef.current || !content) return;
+      const root = measureRef.current as HTMLDivElement;
+      const children = Array.from(
+        root.querySelectorAll<HTMLElement>("[data-section-id]")
+      );
+      const pagesArr: string[][] = [];
+      let currentPage: string[] = [];
+      let currentHeight = 0;
+      const usableHeight = PAGE_HEIGHT - PAGE_PADDING * 2;
+
+      for (const section of content.sections) {
+        const el = children.find((c) => c.dataset.sectionId === section.id);
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        const cs = getComputedStyle(el);
+        const marginTop = parseFloat(cs.marginTop || "0") || 0;
+        const marginBottom = parseFloat(cs.marginBottom || "0") || 0;
+        const h = rect.height + marginTop + marginBottom;
+
+        if (currentHeight + h > usableHeight && currentPage.length > 0) {
+          pagesArr.push(currentPage);
+          currentPage = [section.id];
+          currentHeight = h;
+        } else {
+          currentPage.push(section.id);
+          currentHeight += h;
+        }
+      }
+      if (currentPage.length) pagesArr.push(currentPage);
+
+      // simple deep-equality check for string arrays
+      const same =
+        pagesArr.length === pages.length &&
+        pagesArr.every(
+          (p, i) =>
+            p.length === pages[i]?.length &&
+            p.every((id, j) => id === pages[i][j])
+        );
+      if (!same) {
+        setPages(pagesArr);
+        setPageIndex(0);
+      }
+    };
+
+    // measure initially and after a short frame to let fonts/layout settle
+    requestAnimationFrame(() => {
+      measureAndPaginate();
+    });
+
+    const onResize = () => {
+      requestAnimationFrame(measureAndPaginate);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [content, PAGE_HEIGHT, PAGE_PADDING]);
+
   return (
     <div className="bg-slate-50 text-slate-800 font-sans overflow-hidden h-screen flex flex-col">
       <header className="h-14 bg-white border-b border-[#e2e8f0] flex items-center justify-between px-4 shrink-0 z-30 relative shadow-sm">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 text-[#0f172a]">
-            <span className="text-[24px]">
-              <Gavel fontSize="inherit" />
-            </span>
+            <Image src={logo} width={30} height={30} alt="Logo for Accord" />
             <span className="text-lg font-bold tracking-tight">Accord</span>
           </div>
           <div className="h-5 w-px bg-gray-200"></div>
@@ -162,80 +236,6 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
         </div>
       </div>
       <div className="flex flex-1 overflow-hidden">
-        <aside className="w-15 bg-white border-r border-[#e2e8f0] flex flex-col items-center py-4 gap-2 shrink-0 z-10 transition-all duration-300">
-          <a
-            className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors group relative"
-            href="#"
-          >
-            <span className="text-[24px]">
-              <Dashboard fontSize="inherit" />
-            </span>
-            <span className="absolute left-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Overview
-            </span>
-          </a>
-          <a
-            className="w-10 h-10 flex items-center justify-center rounded-md bg-slate-100 text-indigo-600  shadow-sm ring-1 ring-slate-200 group relative"
-            href="#"
-          >
-            <span className=" text-[24px] fill-1">
-              <Description fontSize="inherit" />
-            </span>
-            <span className="absolute left-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Document
-            </span>
-          </a>
-          <a
-            className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors group relative"
-            href="#"
-          >
-            <span className=" text-[24px]">
-              <Gavel fontSize="inherit" />
-            </span>
-            <span className="absolute left-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Decisions
-            </span>
-          </a>
-          <a
-            className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors group relative"
-            href="#"
-          >
-            <span className=" text-[24px]">
-              <FactCheck fontSize="inherit" />
-            </span>
-            <span className="absolute left-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Readiness
-            </span>
-          </a>
-          <div className="w-8 h-px bg-gray-200 my-2"></div>
-          <div className="w-10 h-10 flex items-center justify-center rounded-md cursor-help group relative">
-            <span className=" text-green-600 text-[20px]">
-              <Verified fontSize="inherit" />
-            </span>
-            <span className="absolute left-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Authoritative Draft
-              <br />
-              Last updated 2h ago
-            </span>
-          </div>
-          <div className="flex-1"></div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors mb-2 group relative">
-            <span className=" text-[24px]">
-              <FilterList fontSize="inherit" />
-            </span>
-            <span className="absolute left-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Filters
-            </span>
-          </button>
-          <button className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors border border-transparent hover:border-gray-200 group relative">
-            <span className=" text-[20px]">
-              <KeyboardDoubleArrowRight fontSize="inherit" />
-            </span>
-            <span className="absolute left-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Expand Sidebar
-            </span>
-          </button>
-        </aside>
         <main className="flex-1 bg-[#f1f5f9] relative overflow-y-auto flex justify-center p-8 scroll-smooth">
           {docLoading ? (
             <div className="flex items-center justify-center h-full">
@@ -248,17 +248,125 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
             <div className="w-full max-w-4xl bg-white min-h-350 mb-20 shadow relative">
               {/* paper padding */}
               <div className="px-20 pb-20 pt-14">
-                {/* Optional title block */}
-                <h1 className="text-2xl font-serif font-bold text-center text-[#0f172a] mb-8">
-                  {document?.title ?? contract?.name}
-                </h1>
-
                 {content ? (
-                  <DocumentViewer
-                    document={content}
-                    activeSectionId={selectedSection?.id ?? null}
-                    onSectionClick={(s) => setSelectedSection(s)}
-                  />
+                  <>
+                    {/* Hidden measurement render */}
+                    <div
+                      ref={measureRef}
+                      style={{
+                        position: "absolute",
+                        left: -99999,
+                        top: 0,
+                        visibility: "hidden",
+                        pointerEvents: "none",
+                        width: PAGE_MAX_WIDTH - PAGE_PADDING * 2,
+                      }}
+                    >
+                      <DocumentViewer
+                        document={content}
+                        activeSectionId={selectedSection?.id ?? null}
+                        onSectionClick={() => {}}
+                        readOnly
+                      />
+                    </div>
+
+                    {/* Visible paginated pages rendered inside the paper (single page view) */}
+                    <div>
+                      {pages.length === 0 ? (
+                        <div ref={paperRef}>
+                          <DocumentViewer
+                            document={content}
+                            activeSectionId={selectedSection?.id ?? null}
+                            onSectionClick={(s) =>
+                              setSelectedSection((prev) =>
+                                prev?.id === s.id ? null : s
+                              )
+                            }
+                            onRaiseIssue={(s) => setIssueContext(s.content)}
+                            onProposeAmendment={(s) => setProposalContext(s.content)}
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          {/* floating bottom pagination control */}
+                          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+                            <div className="flex items-center gap-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-200 shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),_0_4px_6px_-4px_rgba(0,0,0,0.1)]">
+                              <button
+                                onClick={() =>
+                                  setPageIndex((i) => Math.max(0, i - 1))
+                                }
+                                disabled={pageIndex === 0}
+                                className={`w-8 h-8 flex items-center justify-center rounded-full ${
+                                  pageIndex === 0
+                                    ? "bg-gray-100 text-gray-300 cursor-default"
+                                    : "bg-gray-100 hover:bg-gray-200 transition-colors text-[#0f172a]"
+                                }`}
+                              >
+                                <span className="text-[20px]">
+                                  <ChevronLeft fontSize="inherit" />
+                                </span>
+                              </button>
+                              <span className="font-serif text-[15px] font-medium select-none text-[#0f172a]">
+                                Page{" "}
+                                <span className="font-bold">
+                                  {pageIndex + 1}
+                                </span>{" "}
+                                of{" "}
+                                <span className="text-[#64748b]">
+                                  {pages.length}
+                                </span>
+                              </span>
+                              <button
+                                onClick={() =>
+                                  setPageIndex((i) =>
+                                    Math.min(pages.length - 1, i + 1)
+                                  )
+                                }
+                                disabled={pageIndex >= pages.length - 1}
+                                className={`w-8 h-8 flex items-center justify-center rounded-full ${
+                                  pageIndex >= pages.length - 1
+                                    ? "bg-gray-100 text-gray-300 cursor-default"
+                                    : "bg-gray-100 hover:bg-gray-200 transition-colors text-[#0f172a]"
+                                }`}
+                              >
+                                <span className="text-[20px]">
+                                  <ChevronRight fontSize="inherit" />
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <div ref={paperRef}>
+                            <div
+                              className="accord-page"
+                              style={{
+                                width: "100%",
+                                maxWidth: PAGE_MAX_WIDTH,
+                                height: PAGE_HEIGHT,
+                                boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+                                margin: "0 auto",
+                                padding: PAGE_PADDING,
+                                boxSizing: "border-box",
+                                overflow: "hidden",
+                              }}
+                            >
+                              <DocumentViewer
+                                document={content}
+                                visibleSectionIds={pages[pageIndex]}
+                                activeSectionId={selectedSection?.id ?? null}
+                                onSectionClick={(s) => setSelectedSection(s)}
+                                onRaiseIssue={(s) => setIssueContext(s.content)}
+                                onProposeAmendment={(s) => setProposalContext(s.content)}
+                              />
+                            </div>
+                            <div className="mt-3 text-right text-sm text-gray-500">
+                              Page {pageIndex + 1} of {pages.length}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 ) : (
                   <p className="text-slate-500">No document content.</p>
                 )}
@@ -266,41 +374,7 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
             </div>
           )}
         </main>
-        <aside className="w-15 bg-white border-l border-[#e2e8f0] flex flex-col items-center py-4 gap-4 shrink-0 z-20 shadow-sm transition-all duration-300">
-          <button className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors mb-2 group relative">
-            <span className=" text-[24px]">
-              <KeyboardDoubleArrowLeft fontSize="inherit" />
-            </span>
-            <span className="absolute right-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Expand Panel
-            </span>
-          </button>
-          <div className="w-8 h-px bg-gray-200mb-2"></div>
-          <div className="relative group">
-            <button className="w-10 h-10 flex items-center justify-center rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors shadow-sm border border-indigo-100">
-              <span className=" text-[24px]">
-                <AssignmentLate fontSize="inherit" />
-              </span>
-            </button>
-          </div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-md text-[#64748b] hover:bg-gray-50 hover:text-indigo-600 transition-colors group relative">
-            <span className=" text-[24px]">
-              <History fontSize="inherit" />
-            </span>
-            <span className="absolute right-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Activity History
-            </span>
-          </button>
-          <div className="flex-1"></div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-[#334155] transition-colors shadow-md group relative">
-            <span className=" text-[20px]">
-              <Add fontSize="inherit" />
-            </span>
-            <span className="absolute right-12 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              New Issue
-            </span>
-          </button>
-        </aside>
+        <WorkspaceSidebar issueContext={issueContext} proposalContext={proposalContext} onClearContext={() => { setIssueContext(null); setProposalContext(null); }} />
       </div>
     </div>
   );
