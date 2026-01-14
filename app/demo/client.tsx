@@ -19,11 +19,11 @@ const DemoPage = () => {
                 alt="Logo for Accord"
               />
             </div>
-            <a href="#hero">
+            <Link href="/">
               <span className="text-xl font-serif font-bold tracking-light text-slate-900 leading-none">
                 Accord
               </span>
-            </a>
+            </Link>
           </div>
           <div className="hidden md:flex items-center gap-1 bg-white/70 backdrop-blur-xl px-2 py-1.5 rounded-full border border-white/50 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] ring-1 ring-slate-900/5 hover:bg-white/90 transition-all duration-300 transform hover:scale-[1.01]">
             <a
