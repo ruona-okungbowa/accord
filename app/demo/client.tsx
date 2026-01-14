@@ -195,60 +195,18 @@ const DemoPage = () => {
                       </div>
                       <div className="flex-1">
                         <h4 className="font-bold text-slate-900 group-hover:text-brand-primary transition-colors">
-                          Project Alpha - Term Loan B
+                          Phoneix Agreement
                         </h4>
-                        <p className="text-xs text-slate-500 mt-1 uppercase font-mono tracking-tighter">
-                          142 Pages • Synergistic Growth Ltd
-                        </p>
                       </div>
                       <div className="self-center">
-                        <span className="material-symbols-outlined text-slate-300 group-hover:text-brand-primary transition-colors">
-                          download
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="group border border-slate-100 rounded-2xl p-4 hover:border-brand-primary/30 hover:bg-brand-primary/5 transition-all cursor-pointer">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:text-brand-primary transition-colors">
-                        <span className="material-symbols-outlined">
-                          domain
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-bold text-slate-900 group-hover:text-brand-primary transition-colors">
-                          Real Estate Bridge Facility
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-1 uppercase font-mono tracking-tighter">
-                          88 Pages • Skyline Assets LP
-                        </p>
-                      </div>
-                      <div className="self-center">
-                        <span className="material-symbols-outlined text-slate-300 group-hover:text-brand-primary transition-colors">
-                          download
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="group border border-slate-100 rounded-2xl p-4 hover:border-brand-primary/30 hover:bg-brand-primary/5 transition-all cursor-pointer">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:text-brand-primary transition-colors">
-                        <span className="material-symbols-outlined">
-                          receipt_long
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-bold text-slate-900 group-hover:text-brand-primary transition-colors">
-                          Multi-Currency Revolver
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-1 uppercase font-mono tracking-tighter">
-                          115 Pages • Global Corp S.A.
-                        </p>
-                      </div>
-                      <div className="self-center">
-                        <span className="material-symbols-outlined text-slate-300 group-hover:text-brand-primary transition-colors">
-                          download
-                        </span>
+                        <a
+                          href="/phoenix-agreement.docx"
+                          download="phoenix-agreement.docx"
+                        >
+                          <span className="material-symbols-outlined text-slate-300 group-hover:text-brand-primary transition-colors">
+                            download
+                          </span>
+                        </a>
                       </div>
                     </div>
                   </div>
