@@ -182,44 +182,45 @@ const CreateDealModal = ({ closeModal }: AddDealProps) => {
             >
               Upload Document
             </label>
-            <div {...getRootProps()}>
-              <input {...getInputProps()} />
-              {isDragActive ? (
-                <div className="group relative flex items-center gap-4 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-4 transition-colors hover:border-indigo-600/50 hover:bg-slate-100">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-indigo-600">
-                    <span>
-                      <UploadFile fontSize="medium" />
-                    </span>
+            {!dealData.document ? (
+              <div {...getRootProps()}>
+                <input {...getInputProps()} />
+                {isDragActive ? (
+                  <div className="group relative flex items-center gap-4 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-4 transition-colors hover:border-indigo-600/50 hover:bg-slate-100 cursor-pointer">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-indigo-600">
+                      <span>
+                        <UploadFile fontSize="medium" />
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-900">
+                        Drop file here
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-900">
-                      Drop file here
-                    </p>
+                ) : (
+                  <div className="group relative flex items-center gap-4 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-4 transition-colors hover:border-indigo-600/50 hover:bg-slate-100 cursor-pointer">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-indigo-600">
+                      <span>
+                        <UploadFile fontSize="medium" />
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-900">
+                        Drop file or{" "}
+                        <span className="text-indigo-600 font-semibold hover:underline">
+                          browse
+                        </span>
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        PDF or DOCX (max 25MB)
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="group relative flex items-center gap-4 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-4 transition-colors hover:border-indigo-600/50 hover:bg-slate-100">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-indigo-600">
-                    <span>
-                      <UploadFile fontSize="medium" />
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-900">
-                      Drop file or{" "}
-                      <button className="text-indigo-600 font-semibold hover:underline">
-                        browse
-                      </button>
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      PDF or DOCX (max 25MB)
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-            {dealData.document ? (
-              <div className="mt-3 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50/50 px-4 py-3">
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50/50 px-4 py-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
                   <span>
                     <CheckCircle fontSize="small" />
@@ -237,12 +238,12 @@ const CreateDealModal = ({ closeModal }: AddDealProps) => {
                 <button
                   type="button"
                   onClick={removeDocument}
-                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                  className="text-slate-400 hover:text-red-600 transition-colors"
                 >
                   <Delete fontSize="small" />
                 </button>
               </div>
-            ) : null}
+            )}
             {errors ? (
               <div className="mt-3 flex items-center gap-3 rounded-lg border border-red-200 bg-red-50/50 px-4 py-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">

@@ -57,10 +57,14 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
   const [content, setContent] = useState<StructuredDocument | null>(null);
   const [docLoading, setDocLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [issues, setIssues] = useState<any[]>([]);
   const [selectedSection, setSelectedSection] =
     useState<DocumentSection | null>(null);
   const [issueContext, setIssueContext] = useState<string | null>(null);
+  const [issueSectionId, setIssueSectionId] = useState<string | null>(null);
   const [proposalContext, setProposalContext] = useState<string | null>(null);
+  const [proposalSectionId, setProposalSectionId] = useState<string | null>(null);
+  const [proposals, setProposals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [openInviteModal, setOpenInviteModal] = useState(false);
   const measureRef = useRef<HTMLDivElement | null>(null);
@@ -109,7 +113,33 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
   useEffect(() => {
     fetchContractDetails();
     fetchDocument();
+    fetchIssues();
+    fetchProposals();
   }, [id]);
+
+  const fetchProposals = async () => {
+    try {
+      const response = await fetch(`/api/proposals?id=${id}`);
+      const data = await response.json();
+      if (response.ok) {
+        setProposals(data.proposals || []);
+      }
+    } catch (error) {
+      console.error("Error fetching proposals:", error);
+    }
+  };
+
+  const fetchIssues = async () => {
+    try {
+      const response = await fetch(`/api/issues?id=${id}`);
+      const data = await response.json();
+      if (response.ok) {
+        setIssues(data.issues || []);
+      }
+    } catch (error) {
+      console.error("Error fetching issues:", error);
+    }
+  };
 
   // measure hidden rendered sections and compute pages
   useLayoutEffect(() => {
@@ -245,9 +275,9 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
               </div>
             </div>
           ) : (
-            <div className="w-full max-w-4xl bg-white min-h-350 mb-20 shadow relative">
+            <div className="w-full max-w-4xl bg-white min-h-350 mb-20 shadow relative overflow-visible">
               {/* paper padding */}
-              <div className="px-20 pb-20 pt-14">
+              <div className="px-20 pb-20 pt-14 overflow-visible">
                 {content ? (
                   <>
                     {/* Hidden measurement render */}
@@ -266,6 +296,8 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
                         document={content}
                         activeSectionId={selectedSection?.id ?? null}
                         onSectionClick={() => {}}
+                        flaggedSectionIds={issues.map((i) => i.section_id)}
+                        proposalSectionIds={proposals.map((p) => p.section_id).filter(Boolean)}
                         readOnly
                       />
                     </div>
@@ -277,13 +309,21 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
                           <DocumentViewer
                             document={content}
                             activeSectionId={selectedSection?.id ?? null}
+                            flaggedSectionIds={issues.map((i) => i.section_id)}
+                            proposalSectionIds={proposals.map((p) => p.section_id).filter(Boolean)}
                             onSectionClick={(s) =>
                               setSelectedSection((prev) =>
                                 prev?.id === s.id ? null : s
                               )
                             }
-                            onRaiseIssue={(s) => setIssueContext(s.content)}
-                            onProposeAmendment={(s) => setProposalContext(s.content)}
+                            onRaiseIssue={(s) => {
+                              setIssueContext(s.content);
+                              setIssueSectionId(s.id);
+                            }}
+                            onProposeAmendment={(s) => {
+                              setProposalContext(s.content);
+                              setProposalSectionId(s.id);
+                            }}
                           />
                         </div>
                       ) : (
@@ -347,20 +387,27 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
                                 margin: "0 auto",
                                 padding: PAGE_PADDING,
                                 boxSizing: "border-box",
-                                overflow: "hidden",
+                                overflow: "visible",
                               }}
                             >
                               <DocumentViewer
                                 document={content}
                                 visibleSectionIds={pages[pageIndex]}
                                 activeSectionId={selectedSection?.id ?? null}
+                                flaggedSectionIds={issues.map(
+                                  (i) => i.section_id
+                                )}
+                                proposalSectionIds={proposals.map((p) => p.section_id).filter(Boolean)}
                                 onSectionClick={(s) => setSelectedSection(s)}
-                                onRaiseIssue={(s) => setIssueContext(s.content)}
-                                onProposeAmendment={(s) => setProposalContext(s.content)}
+                                onRaiseIssue={(s) => {
+                                  setIssueContext(s.content);
+                                  setIssueSectionId(s.id);
+                                }}
+                                onProposeAmendment={(s) => {
+                                  setProposalContext(s.content);
+                                  setProposalSectionId(s.id);
+                                }}
                               />
-                            </div>
-                            <div className="mt-3 text-right text-sm text-gray-500">
-                              Page {pageIndex + 1} of {pages.length}
                             </div>
                           </div>
                         </div>
@@ -374,7 +421,22 @@ const DocumentWorkspace = ({ id }: { id: string }) => {
             </div>
           )}
         </main>
-        <WorkspaceSidebar issueContext={issueContext} proposalContext={proposalContext} onClearContext={() => { setIssueContext(null); setProposalContext(null); }} />
+        <WorkspaceSidebar
+          issueContext={issueContext}
+          proposalContext={proposalContext}
+          dealId={id}
+          documentId={document?.id}
+          sectionId={issueSectionId}
+          proposalSectionId={proposalSectionId}
+          onClearContext={() => {
+            setIssueContext(null);
+            setIssueSectionId(null);
+            setProposalContext(null);
+            setProposalSectionId(null);
+          }}
+          onIssueCreated={fetchIssues}
+          onProposalCreated={fetchProposals}
+        />
       </div>
     </div>
   );

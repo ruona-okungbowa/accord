@@ -66,5 +66,46 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorised user" }, { status: 401 });
     }
-  } catch (error) {}
+
+    const body = await request.json();
+    const { deal_id, document_id, title, summary, proposed_text, section_id } = body;
+
+    if (!deal_id || !document_id || !title || !proposed_text) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    const { data: proposal, error } = await supabase
+      .from("proposals")
+      .insert({
+        deal_id,
+        document_id,
+        section_id,
+        title,
+        summary: summary || "",
+        proposed_text,
+        proposed_by: user.id,
+        status: "draft",
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Create proposal edit entry if section_id provided
+    if (section_id && proposal) {
+      await supabase.from("proposal_edits").insert({
+        proposal_id: proposal.id,
+        section_id,
+        action: "modify",
+        original_text: "",
+        proposed_text,
+        order: 0,
+      });
+    }
+
+    return NextResponse.json({ proposal }, { status: 201 });
+  } catch (error) {
+    console.error("POST proposals route error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

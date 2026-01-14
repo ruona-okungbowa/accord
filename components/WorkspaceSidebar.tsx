@@ -12,7 +12,7 @@ import IssuesPanel from "./IssuesPanel";
 import ActivityPanel from "./ActivityPanel";
 import Image from "next/image";
 
-const WorkspaceSidebar = ({ issueContext, onClearContext, proposalContext }: { issueContext?: string | null; onClearContext?: () => void; proposalContext?: string | null }) => {
+const WorkspaceSidebar = ({ issueContext, onClearContext, proposalContext, dealId, documentId, sectionId, onIssueCreated, proposalSectionId, onProposalCreated }: { issueContext?: string | null; onClearContext?: () => void; proposalContext?: string | null; dealId?: string; documentId?: string; sectionId?: string | null; onIssueCreated?: () => void; proposalSectionId?: string | null; onProposalCreated?: () => void }) => {
   const [expanded, setExpanded] = useState(false);
   const [openProposals, setOpenProposals] = useState(false);
   const [openIssues, setOpenIssues] = useState(false);
@@ -131,9 +131,9 @@ const WorkspaceSidebar = ({ issueContext, onClearContext, proposalContext }: { i
               Activity
             </button>
           </div>
-          {openProposals && <ProposalPanel proposalContext={proposalContext} onClearContext={onClearContext} />}
-          {openIssues && <IssuesPanel issueContext={issueContext} onClearContext={onClearContext} />}
-          {openActivity && <ActivityPanel />}
+          {openProposals && <ProposalPanel proposalContext={proposalContext} onClearContext={onClearContext} dealId={dealId} documentId={documentId} sectionId={proposalSectionId} onProposalCreated={onProposalCreated} />}
+          {openIssues && <IssuesPanel issueContext={issueContext} onClearContext={onClearContext} dealId={dealId} documentId={documentId} sectionId={sectionId} onIssueCreated={onIssueCreated} />}
+          {openActivity && <ActivityPanel dealId={dealId} />}
         </div>
       )}
     </aside>

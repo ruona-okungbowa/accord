@@ -6,6 +6,7 @@ import React, { useMemo, useState } from "react";
 interface Props {
   document: StructuredDocument;
   flaggedSectionIds?: string[];
+  proposalSectionIds?: string[];
   activeSectionId?: string | null;
   onSectionClick?: (section: DocumentSection) => void;
   onRaiseIssue?: (section: DocumentSection) => void;
@@ -27,6 +28,7 @@ const DocumentViewer = ({
   onProposeAmendment,
   readOnly = false,
   flaggedSectionIds = [],
+  proposalSectionIds = [],
   containerRef,
   visibleSectionIds,
 }: Props) => {
@@ -34,6 +36,10 @@ const DocumentViewer = ({
   const flagged = useMemo(
     () => new Set(flaggedSectionIds),
     [flaggedSectionIds]
+  );
+  const proposed = useMemo(
+    () => new Set(proposalSectionIds),
+    [proposalSectionIds]
   );
 
   function splitClauseNumber(text: string): {
@@ -74,7 +80,6 @@ const DocumentViewer = ({
   }
 
   function formatDefinedTerms(text: string) {
-    // Render text with quoted terms wrapped in <strong> without affecting other text.
     const parts: Array<{ type: "text" | "quote"; text: string }> = [];
     const re = /"([^\"]+)"/g;
     let lastIndex = 0;
@@ -106,11 +111,17 @@ const DocumentViewer = ({
     const isSelected = activeSectionId === section.id;
     const isHover = hoverId === section.id;
     const isFlagged = flagged.has(section.id);
+    const hasProposal = proposed.has(section.id);
+    const issueNumber = isFlagged
+      ? flaggedSectionIds.indexOf(section.id) + 1
+      : null;
+    const proposalNumber = hasProposal
+      ? proposalSectionIds.indexOf(section.id) + 1
+      : null;
 
     const common = cx(
-      "accord-block",
-      isSelected && "selected-element",
-      isFlagged && "ring-1 ring-amber-400"
+      "accord-block relative",
+      isSelected && "selected-element"
     );
 
     const handleClick = () => {
@@ -122,11 +133,45 @@ const DocumentViewer = ({
       }
     };
 
+    const renderIssueBadge = () => {
+      if (!isFlagged) return null;
+      return (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onRaiseIssue?.(section);
+          }}
+          className="absolute -left-8 top-0 w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm cursor-pointer hover:bg-amber-600 transition-colors"
+        >
+          {issueNumber}
+        </div>
+      );
+    };
+
+    const renderProposalBadge = () => {
+      if (!hasProposal) return null;
+      const topOffset = isFlagged ? 'top-7' : 'top-0';
+      return (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onProposeAmendment?.(section);
+          }}
+          className={`absolute -left-8 ${topOffset} w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm cursor-pointer hover:bg-blue-600 transition-colors`}
+        >
+          {proposalNumber}
+        </div>
+      );
+    };
+
     const renderActionToolbar = () => {
       if (!isSelected || readOnly) return null;
       return (
         <div className="absolute left-0 -top-12 flex items-center bg-[#0f172a] text-white rounded-md shadow-xl overflow-hidden z-20">
-          <button onClick={() => onRaiseIssue?.(section)} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800 border-r border-white/10 transition-colors">
+          <button
+            onClick={() => onRaiseIssue?.(section)}
+            className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800 border-r border-white/10 transition-colors"
+          >
             <span className="text-[16px]">
               <AddComment fontSize="inherit" />
             </span>
@@ -134,7 +179,10 @@ const DocumentViewer = ({
               Raise Issue
             </span>
           </button>
-          <button onClick={() => onProposeAmendment?.(section)} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800 transition-colors">
+          <button
+            onClick={() => onProposeAmendment?.(section)}
+            className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800 transition-colors"
+          >
             <span className="text-[16px]">
               <EditNote fontSize="inherit" />
             </span>
@@ -159,6 +207,8 @@ const DocumentViewer = ({
           onMouseLeave={() => setHoverId(null)}
           onClick={handleClick}
         >
+          {renderIssueBadge()}
+          {renderProposalBadge()}
           {renderActionToolbar()}
           <div
             className={
@@ -190,6 +240,8 @@ const DocumentViewer = ({
           onMouseLeave={() => setHoverId(null)}
           onClick={handleClick}
         >
+          {renderIssueBadge()}
+          {renderProposalBadge()}
           {renderActionToolbar()}
           <div className="accord-clause">
             <div className="accord-clause-number">
@@ -216,6 +268,8 @@ const DocumentViewer = ({
             marginLeft: indentLevel === 2 ? 32 : 0,
           }}
         >
+          {renderIssueBadge()}
+          {renderProposalBadge()}
           {renderActionToolbar()}
           <div className="accord-list">
             <div className="accord-list-marker">{marker ?? "•"}</div>
@@ -236,6 +290,8 @@ const DocumentViewer = ({
         onMouseLeave={() => setHoverId(null)}
         onClick={handleClick}
       >
+        {renderIssueBadge()}
+        {renderProposalBadge()}
         {renderActionToolbar()}
         <p className="accord-paragraph">
           {formatDefinedTerms(section.content)}
@@ -243,7 +299,6 @@ const DocumentViewer = ({
       </div>
     );
   }
-  // determine which sections to render (allow parent to paginate)
   const sectionsToRender = Array.isArray(visibleSectionIds)
     ? document.sections.filter((s) => visibleSectionIds.includes(s.id))
     : document.sections;

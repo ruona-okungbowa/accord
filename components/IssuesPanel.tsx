@@ -5,17 +5,103 @@ import React, { useState, useEffect } from "react";
 const IssuesPanel = ({
   issueContext,
   onClearContext,
+  dealId,
+  documentId,
+  sectionId,
+  onIssueCreated,
 }: {
   issueContext?: string | null;
   onClearContext?: () => void;
+  dealId?: string;
+  documentId?: string;
+  sectionId?: string | null;
+  onIssueCreated?: () => void;
 }) => {
-  const [formOpen, setFormOpen] = useState(true);
+  const [formOpen, setFormOpen] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<any | null>(null);
+  const [issues, setIssues] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    type: "Ambiguity",
+    priority: "Medium",
+  });
 
   useEffect(() => {
-    if (issueContext) {
-      setFormOpen(true);
+    if (issueContext && sectionId) {
+      const existingIssue = issues.find((i) => i.section_id === sectionId);
+      if (existingIssue) {
+        setSelectedIssue(existingIssue);
+        setFormOpen(false);
+      } else {
+        setFormOpen(true);
+        setSelectedIssue(null);
+      }
+    } else {
+      // When panel opens without context, show list
+      setFormOpen(false);
+      setSelectedIssue(null);
     }
-  }, [issueContext]);
+  }, [issueContext, sectionId, issues]);
+
+  useEffect(() => {
+    if (dealId && !formOpen) {
+      fetchIssues();
+      // Reset selected issue when switching to list view
+      setSelectedIssue(null);
+    }
+  }, [dealId, formOpen]);
+
+  const fetchIssues = async () => {
+    if (!dealId) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/issues?id=${dealId}`);
+      const data = await response.json();
+      if (response.ok) {
+        setIssues(data.issues || []);
+      }
+    } catch (error) {
+      console.error("Error fetching issues:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dealId || !documentId || !sectionId) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch("/api/issues", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deal_id: dealId,
+          document_id: documentId,
+          section_id: sectionId,
+          clause_ref: issueContext || "",
+          title: formData.title,
+          description: formData.description,
+          priority: formData.priority.toLowerCase(),
+        }),
+      });
+
+      if (response.ok) {
+        setFormOpen(false);
+        setFormData({ title: "", description: "", type: "Ambiguity", priority: "Medium" });
+        onClearContext?.();
+        onIssueCreated?.();
+        fetchIssues();
+      }
+    } catch (error) {
+      console.error("Error creating issue:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return formOpen ? (
     <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
@@ -30,10 +116,7 @@ const IssuesPanel = ({
             '"...excluding any restructuring costs incurred during such period;"'}
         </p>
       </div>
-      <form
-        action="#"
-        className="flex-1 overflow-y-auto p-5 space-y-5 bg-white"
-      >
+      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-5 bg-white">
         <div className="space-y-1.5">
           <label
             htmlFor="title"
@@ -45,7 +128,10 @@ const IssuesPanel = ({
             type="text"
             name="title"
             id="title"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             placeholder="Summarize the issue in a few words"
+            required
             className="w-full px-3 py-2 text-sm bg-gray-50  border border-gray-200 rounded-md focus:ring-1 focus:ring-violet-500 focus:border-violet-500 outline-none transition-shadow text-[#1e293b]"
           />
         </div>
@@ -58,7 +144,11 @@ const IssuesPanel = ({
               Type
             </label>
             <div className="relative">
-              <select className="w-full appearance-none pl-3 pr-8 py-2 text-sm bg-gray-50  border border-gray-200  rounded-md focus:ring-1 focus:ring-violet-500 outline-none text-text-main">
+              <select
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                className="w-full appearance-none pl-3 pr-8 py-2 text-sm bg-gray-50  border border-gray-200  rounded-md focus:ring-1 focus:ring-violet-500 outline-none text-text-main"
+              >
                 <option>Ambiguity</option>
                 <option>Risk</option>
                 <option>Missing</option>
@@ -76,7 +166,11 @@ const IssuesPanel = ({
               Priority
             </label>
             <div className="relative">
-              <select className="w-full appearance-none pl-3 pr-8 py-2 text-sm bg-gray-50  border border-gray-200  rounded-md focus:ring-1 focus:ring-violet-500 outline-none text-text-main">
+              <select
+                value={formData.priority}
+                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                className="w-full appearance-none pl-3 pr-8 py-2 text-sm bg-gray-50  border border-gray-200  rounded-md focus:ring-1 focus:ring-violet-500 outline-none text-text-main"
+              >
                 <option>Low</option>
                 <option>Medium</option>
                 <option>High</option>
@@ -97,64 +191,130 @@ const IssuesPanel = ({
           <textarea
             name="description"
             id="description"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-md focus:ring-1 focus:ring-violet-500 focus:border-violet-500 outline-none transition-shadow text-[#1e293b] resize-none"
             placeholder="Detailed context and rationale...."
             rows={4}
           ></textarea>
         </div>
-        <div className="space-y-1.5">
-          <label
-            htmlFor="assignedTo"
-            className="font-bold text-slate-500 uppercase tracking-wide text-[11px]"
-          >
-            Assign to
-          </label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">
-              <Search fontSize="inherit" />
-            </span>
-            <input
-              type="text"
-              name="assignedTo"
-              id="assignedTo"
-              placeholder="Search participants..."
-              className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-md focus:ring-1 focus:ring-violet-500 focus:border-violet-500 outline-none text-[#1e293b]"
-            />
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 rounded border border-slate-200">
-              <div className="w-4 h-4 rounded-full bg-slate-300"></div>
-              <span className="text-[11px] text-slate-600 font-medium">
-                Alice
-              </span>
-              <button className=" text-[14px] text-slate-400 hover:text-red-500">
-                <Close fontSize="inherit" />
-              </button>
-            </div>
-          </div>
-        </div>
       </form>
       <div className="p-4 border-t border-[#e2e8f0] bg-gray-50 flex gap-3">
-        <button className="flex-1 px-4 py-2 text-sm font-bold text-white bg-violet-500 hover:bg-violet-800 rounded shadow-sm transition-all">
-          Raise Issue
+        <button
+          type="submit"
+          onClick={handleSubmit}
+          disabled={loading}
+          className="flex-1 px-4 py-2 text-sm font-bold text-white bg-violet-500 hover:bg-violet-800 rounded shadow-sm transition-all disabled:opacity-50"
+        >
+          {loading ? "Creating..." : "Raise Issue"}
         </button>
-        <button className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-gray-200 rounded transition-all">
+        <button
+          type="button"
+          onClick={() => {
+            setFormOpen(false);
+            onClearContext?.();
+          }}
+          className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-gray-200 rounded transition-all"
+        >
           Cancel
         </button>
       </div>
     </div>
   ) : (
-    <div className="flex-1 flex items-center flex-col text-center justify-center bg-slate-50 p-12">
-      <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center border border-[#e2e8f0] shadow-sm mb-6">
-        <span className="text-slate-300 text-[32px]">
-          <Warning fontSize="inherit" />
-        </span>
+    <div className="flex-1 flex flex-col bg-slate-50">
+      <div className="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
+        <h3 className="text-sm font-bold text-[#0f172a]">Issues ({issues.length})</h3>
+        <button
+          onClick={() => setFormOpen(true)}
+          className="px-3 py-1 text-xs font-bold text-violet-500 hover:bg-violet-50 rounded transition-all"
+        >
+          + New Issue
+        </button>
       </div>
-      <h3 className="font-bold text-lg text-[#0f172a] mb-2">All clear</h3>
-      <p className="leading-relaxed mb-8 text-[13px] text-[#64748b]">
-        No issues have been raised on this contract yet. Select a clause in the
-        document to flag ambiguities or missing information
-      </p>
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-sm text-gray-500">Loading...</div>
+        </div>
+      ) : issues.length === 0 ? (
+        <div className="flex-1 flex items-center flex-col text-center justify-center p-12">
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center border border-[#e2e8f0] shadow-sm mb-6">
+            <span className="text-slate-300 text-[32px]">
+              <Warning fontSize="inherit" />
+            </span>
+          </div>
+          <h3 className="font-bold text-lg text-[#0f172a] mb-2">All clear</h3>
+          <p className="leading-relaxed mb-8 text-[13px] text-[#64748b]">
+            No issues have been raised on this contract yet. Select a clause in the
+            document to flag ambiguities or missing information
+          </p>
+        </div>
+      ) : selectedIssue ? (
+        <div className="flex-1 flex flex-col bg-white">
+          <div className="p-4 border-b border-[#e2e8f0]">
+            <button
+              onClick={() => setSelectedIssue(null)}
+              className="text-xs text-violet-500 hover:text-violet-700 mb-3 flex items-center gap-1"
+            >
+              ← Back to all issues
+            </button>
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="font-bold text-base text-[#0f172a]">{selectedIssue.title}</h3>
+              <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${
+                selectedIssue.priority === "high" ? "bg-red-100 text-red-600" :
+                selectedIssue.priority === "medium" ? "bg-yellow-100 text-yellow-600" :
+                "bg-gray-100 text-gray-600"
+              }`}>{selectedIssue.priority}</span>
+            </div>
+            {selectedIssue.description && (
+              <p className="text-sm text-[#64748b] mb-3">{selectedIssue.description}</p>
+            )}
+            <div className="text-xs text-gray-400">
+              Created by {selectedIssue.created_by?.first_name} {selectedIssue.created_by?.last_name}
+            </div>
+          </div>
+          <div className="flex-1 p-4 bg-slate-50">
+            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Discussion</h4>
+            <div className="text-sm text-gray-500 text-center py-8">
+              No comments yet. Start the discussion.
+            </div>
+          </div>
+          <div className="p-4 border-t border-[#e2e8f0] bg-white">
+            <textarea
+              placeholder="Add a comment..."
+              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-md focus:ring-1 focus:ring-violet-500 focus:border-violet-500 outline-none resize-none"
+              rows={3}
+            ></textarea>
+            <button className="mt-2 px-4 py-2 text-sm font-bold text-white bg-violet-500 hover:bg-violet-800 rounded shadow-sm transition-all">
+              Comment
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {issues.map((issue) => (
+            <div
+              key={issue.id}
+              onClick={() => setSelectedIssue(issue)}
+              className="bg-white border border-[#e2e8f0] rounded-lg p-4 hover:shadow-sm transition-shadow cursor-pointer"
+            >
+              <div className="flex items-start justify-between mb-2">
+                <h4 className="font-bold text-sm text-[#0f172a]">{issue.title}</h4>
+                <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${
+                  issue.priority === "high" ? "bg-red-100 text-red-600" :
+                  issue.priority === "medium" ? "bg-yellow-100 text-yellow-600" :
+                  "bg-gray-100 text-gray-600"
+                }`}>{issue.priority}</span>
+              </div>
+              {issue.description && (
+                <p className="text-xs text-[#64748b] mb-2">{issue.description}</p>
+              )}
+              <div className="text-[10px] text-gray-400">
+                Created by {issue.created_by?.first_name} {issue.created_by?.last_name}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
