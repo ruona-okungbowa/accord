@@ -1,3 +1,4 @@
+"use client";
 import { ArrowForward, Explore, PlayArrow } from "@mui/icons-material";
 import { Lock } from "lucide-react";
 import logo from "@/public/logo_colour.png";
