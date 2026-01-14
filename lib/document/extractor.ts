@@ -41,7 +41,6 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
   const location = process.env.GOOGLE_CLOUD_LOCATION!;
   const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID!;
   const processorId = process.env.GOOGLE_DOCUMENT_AI_PROCESSOR_ID!;
-  const keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
   if (!location || !projectId || !processorId) {
     throw new Error(
@@ -51,9 +50,12 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
 
   const apiEndpoint = `${location}-documentai.googleapis.com`;
 
+  const credsJson = process.env.GOOGLE_CREDENTIALS_JSON;
+  const credentials = credsJson ? JSON.parse(credsJson) : undefined;
+
   const client = new DocumentProcessorServiceClient({
     apiEndpoint,
-    ...(keyFilename ? { keyFilename } : {}),
+    ...(credentials ? { credentials } : {}),
   });
 
   const processorName = client.processorPath(projectId, location, processorId);
