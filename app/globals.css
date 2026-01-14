@@ -165,6 +165,15 @@ body {
   text-align: center;
 }
 
+.accord-heading-l2 {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 32px 0 16px 0;
+  text-transform: uppercase;
+  color: #1e293b;
+}
+
 .accord-heading-l3 {
   font-family: var(--font-heading);
   font-size: 20px;

@@ -4,7 +4,6 @@ import {
 } from "@/lib/document/extractor";
 import { structureText } from "@/lib/document/structure";
 import { createClient } from "@/lib/supabase/server";
-import { DocumentProcessorServiceClient } from "@google-cloud/documentai";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
