@@ -98,7 +98,10 @@ const DemoPage = () => {
                 <>
                   <div className="absolute inset-0 bg-linear-to-br from-slate-800 via-slate-900 to-indigo-600 opacity-90"></div>
                   <div className="absolute inset-0 flex items-center justify-center flex-col text-white z-10">
-                    <button className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-2xl">
+                    <button
+                      onClick={() => setIsPlaying(true)}
+                      className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-2xl"
+                    >
                       <span className=" text-5xl fill-current">
                         <PlayArrow fontSize="inherit" />
                       </span>
